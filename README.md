@@ -1,11 +1,35 @@
 <!--
 ---
-title: GrayNinja
-category: code-visualization
+id: day066
+slug: GrayNinja
+
+title: "GrayNinja"
+
+subtitle_ja: "グレイコードのエンコーダー・ディスク可視化ツール"
+subtitle_en: "Gray Code Encoder Disc Visualization Tool"
+
+description_ja: "グレイコード（反射バイナリコード）を直感的に理解するためのインタラクティブ学習ツール。Binary/Gray変換、エンコーダー・ディスク可視化、ハミング距離計算などを提供。"
+description_en: "Interactive learning tool for understanding Gray (Reflected Binary) code through Binary/Gray conversion, encoder disc visualization, and Hamming distance calculation."
+
+category_ja:
+  - データ表現
+category_en:
+  - Data Representation
+
 difficulty: 2
-description: Visual tool for understanding Gray (Reflected Binary) code via conversions and encoder disk visualization.
-tags: [gray-code, binary, visualization, code, security, education]
-demo: https://ipusiron.github.io/GrayNinja/
+
+tags:
+  - gray-code
+  - binary
+  - encoder
+  - visualization
+  - hamming-distance
+  - side-channel
+
+repo_url: "https://github.com/ipusiron/GrayNinja"
+demo_url: "https://ipusiron.github.io/GrayNinja/"
+
+hub: true
 ---
 -->
 
