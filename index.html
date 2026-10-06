@@ -23,6 +23,7 @@
 
 <nav class="tabs" role="tablist" data-i18n-attr="aria-label:ui.tablist">
   <button type="button" class="tab" role="tab" id="tab-basics" data-tab="basics" aria-controls="panel-basics" aria-selected="true" data-i18n="tab.basics"></button>
+  <button type="button" class="tab" role="tab" id="tab-how" data-tab="how" aria-controls="panel-how" aria-selected="false" tabindex="-1" data-i18n="tab.how"></button>
   <button type="button" class="tab" role="tab" id="tab-disc" data-tab="disc" aria-controls="panel-disc" aria-selected="false" tabindex="-1" data-i18n="tab.disc"></button>
   <button type="button" class="tab" role="tab" id="tab-convert" data-tab="convert" aria-controls="panel-convert" aria-selected="false" tabindex="-1" data-i18n="tab.convert"></button>
   <button type="button" class="tab" role="tab" id="tab-security" data-tab="security" aria-controls="panel-security" aria-selected="false" tabindex="-1" data-i18n="tab.security"></button>
@@ -111,6 +112,49 @@
           </table>
         </div>
         <p class="hint" data-i18n="tbl.hint"></p>
+      </section>
+    </div>
+  </section>
+
+  <!-- しくみ -->
+  <section id="panel-how" class="panel" role="tabpanel" aria-labelledby="tab-how" hidden>
+    <div class="panel-single">
+      <section class="box">
+        <h2 class="box-title" data-i18n="ref.title"></h2>
+        <p data-i18n="ref.intro"></p>
+        <div class="control-row">
+          <label for="refBits" data-i18n="ref.bits"></label>
+          <input id="refBits" type="number" min="2" max="5" value="3" inputmode="numeric">
+        </div>
+        <div class="control-row">
+          <button id="refPrev" type="button" data-i18n="ref.prev"></button>
+          <button id="refNext" type="button" class="primary" data-i18n="ref.next"></button>
+          <button id="refReset" type="button" data-i18n="ref.reset"></button>
+        </div>
+        <p class="dip-status" id="refStatus" aria-live="polite"></p>
+        <div class="ref-view mono" id="refView"></div>
+        <p class="hint" id="refCheck"></p>
+      </section>
+
+      <section class="box">
+        <h2 class="box-title" data-i18n="hanoi.title"></h2>
+        <p data-i18n="hanoi.intro"></p>
+        <div class="control-row">
+          <label for="hanoiBits" data-i18n="hanoi.bits"></label>
+          <input id="hanoiBits" type="number" min="2" max="6" value="3" inputmode="numeric">
+        </div>
+        <div class="hanoi" id="hanoiView" aria-hidden="true"></div>
+        <p class="dip-status" id="hanoiStatus" aria-live="polite"></p>
+        <div class="control-row">
+          <button id="hanoiPrev" type="button" data-i18n="hanoi.prev"></button>
+          <button id="hanoiNext" type="button" class="primary" data-i18n="hanoi.next"></button>
+          <button id="hanoiReset" type="button" data-i18n="hanoi.reset"></button>
+        </div>
+        <h3 class="sub-title" data-i18n="hanoi.ruler"></h3>
+        <p class="ruler mono" id="rulerSeq"></p>
+        <h3 class="sub-title" data-i18n="rings.title"></h3>
+        <p id="ringsText"></p>
+        <p class="source" data-i18n="hanoi.source"></p>
       </section>
     </div>
   </section>

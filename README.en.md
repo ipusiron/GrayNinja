@@ -10,7 +10,7 @@ English · [日本語](README.md)
 
 # GrayNinja - Gray Code Encoder Disc Visualization Tool
 
-**GrayNinja** is a tool for learning the Gray code (reflected binary code) through five screens: a comparison table, encoder discs, step-by-step conversion, a security comparison, and source-backed notes.
+**GrayNinja** is a tool for learning the Gray code (reflected binary code) through six screens: a comparison table, how it is built, encoder discs, step-by-step conversion, a security comparison, and source-backed notes.
 
 The Gray code is a binary code ordered so that adjacent values always differ in exactly one bit. Two discs (Gray and binary) rotate to the same angle, so you can compare how many rings change at once when a sector boundary is crossed. A misread simulator offsets the sensors of the read head and shows in numbers how far off the binary disc can read.
 
@@ -32,6 +32,9 @@ Try it directly in your browser.
 >![Basics tab (comparison table)](assets/en/screenshot-basics.png)
 >*The comparison table highlights the bits that changed from the previous value. 7→8 changes 4 bits in binary and 1 bit in Gray*
 
+>![How it works tab](assets/en/screenshot-how.png)
+>*The 3-bit list built by reflection and the Tower of Hanoi solved in 7 moves; the disk numbers match the ruler sequence*
+
 >![Convert tab (dark mode)](assets/en/screenshot-dark.png)
 >*Dark mode: converting a 32-digit binary number to Gray code with the steps shown*
 
@@ -45,7 +48,8 @@ Try it directly in your browser.
 
 ## ✨ Features
 
-- Five tabs (Basics, Disc, Convert, Security, Learn) walk through the properties and uses of the Gray code.
+- Six tabs (Basics, How it works, Disc, Convert, Security, Learn) walk through the properties and uses of the Gray code.
+- The How it works tab steps through building the list by reflection, and shows how the positions of the flipped bits (the ruler sequence) match the Tower of Hanoi moves and the number of moves for the Chinese rings.
 - The comparison table supports 1 to 12 bits and highlights the changed bits in both binary and Gray.
 - Two encoder discs rotate to the same angle, so the sector under the read line can be read in Gray and in binary side by side.
 - The misread simulator offsets the sensor of each ring and compares, for Gray and binary, how often a value farther than a neighbor is read over one turn and how large the error gets.
@@ -65,6 +69,11 @@ Try it directly in your browser.
 3. In the table, check how many bits changed from the previous value (ΔBinary, ΔGray) and which ones are highlighted.
 
 Keyboard shortcuts work only while the Basics tab is shown and no button or input has focus.
+
+### How it works
+
+1. In "Building it by reflection", choose the number of bits (2 to 5) and press "Next stage" to apply "mirror it" and "prefix 0 and 1" one stage at a time. The finished list is checked against the formula (g = b ⊕ (b ≫ 1)).
+2. In "Flipped bits and the Tower of Hanoi", choose the number of disks (2 to 6) and press "Next move" to step through. The disk moved and the position of the flipped bit in the Gray code line up at the same place in the ruler sequence. The number of moves for the same number of Chinese rings is shown below.
 
 ### Disc
 
@@ -254,17 +263,19 @@ GrayNinja/
 │   ├── en/
 │   │   ├── screenshot-basics.png # English screenshot of the Basics tab
 │   │   ├── screenshot-dark.png   # English screenshot of the Convert tab in dark mode
+│   │   ├── screenshot-how.png    # English screenshot of the How it works tab
 │   │   ├── screenshot-learn.png  # English screenshot of the Learn tab
 │   │   ├── screenshot-security.png # English screenshot of the Security tab
 │   │   └── screenshot.png        # English screenshot of the Disc tab
 │   ├── favicon.svg               # Favicon
 │   ├── screenshot-basics.png     # Screenshot of the Basics tab
 │   ├── screenshot-dark.png       # Screenshot of the Convert tab in dark mode
+│   ├── screenshot-how.png        # Screenshot of the How it works tab
 │   ├── screenshot-learn.png      # Screenshot of the Learn tab
 │   ├── screenshot-security.png   # Screenshot of the Security tab
 │   └── screenshot.png            # Screenshot of the Disc tab
 ├── js/
-│   ├── app.js                    # Screen logic (tabs, table, discs, conversion, security, notes)
+│   ├── app.js                    # Screen logic (tabs, table, how it works, discs, conversion, security, notes)
 │   ├── gray-core.js              # Core (conversion, input normalization, steps, disc readings)
 │   ├── i18n.js                   # Language selection and static text replacement
 │   ├── messages.js               # Japanese and English message dictionary

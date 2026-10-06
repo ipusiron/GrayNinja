@@ -12,7 +12,7 @@
   const sub = (n) => String(n).replace(/\d/g, (d) => SUB[d]);
 
   // ── タブ（WAI-ARIA の tabs パターン。矢印・Home・End で移動）──
-  const TABS = ['basics', 'disc', 'convert', 'security', 'learn'];
+  const TABS = ['basics', 'how', 'disc', 'convert', 'security', 'learn'];
   let activeTab = 'basics';
 
   function selectTab(name, focus) {
@@ -766,6 +766,170 @@
     runConvert(false);
   }
 
+  // ── しくみタブ ──
+  // 反射で作る: 段 s は 0〜2(n−1)。0＝1ビットの列、奇数＝k ビットの列を鏡に映す、偶数＝先頭に0と1を付けて k+1 ビットに
+  const refl = { n: 3, s: 0 };
+  const hanoi = { n: 3, k: 0, moves: G.hanoiMoves(3) };
+
+  function codeRow(code, markFirst, index) {
+    const row = document.createElement('div');
+    row.className = 'ref-row';
+    if (index !== null) {
+      const i = document.createElement('span');
+      i.className = 'ref-index';
+      i.textContent = String(index);
+      row.append(i);
+    }
+    const c = document.createElement('span');
+    c.className = 'ref-code';
+    if (markFirst) {
+      const m = document.createElement('mark');
+      m.className = 'flip';
+      m.textContent = code[0];
+      c.append(m, document.createTextNode(code.slice(1)));
+    } else {
+      c.textContent = code;
+    }
+    row.append(c);
+    return row;
+  }
+
+  function renderRefl() {
+    const stages = G.reflectStages(refl.n);
+    const last = 2 * (refl.n - 1);
+    const frag = document.createDocumentFragment();
+    let status;
+    let list = null;
+    if (refl.s === 0) {
+      list = stages[0];
+      list.forEach((c, i) => frag.append(codeRow(c, false, i)));
+      status = t('ref.start');
+    } else if (refl.s % 2 === 1) {
+      const k = (refl.s + 1) / 2;
+      const cur = stages[k - 1];
+      cur.forEach((c, i) => frag.append(codeRow(c, false, i)));
+      const line = document.createElement('div');
+      line.className = 'ref-mirror';
+      line.textContent = t('ref.mirrorLine');
+      frag.append(line);
+      [...cur].reverse().forEach((c) => {
+        const row = codeRow(c, false, null);
+        row.classList.add('ref-dim');
+        frag.append(row);
+      });
+      status = t('ref.mirror', { k });
+    } else {
+      const k = refl.s / 2 + 1;
+      list = stages[k - 1];
+      const half = list.length / 2;
+      list.forEach((c, i) => {
+        if (i === half) {
+          const line = document.createElement('div');
+          line.className = 'ref-mirror';
+          line.textContent = t('ref.mirrorLine');
+          frag.append(line);
+        }
+        frag.append(codeRow(c, true, i));
+      });
+      status = t(refl.s === last ? 'ref.done' : 'ref.prefix', { k });
+    }
+    $('refView').replaceChildren(frag);
+    $('refStatus').textContent = status;
+    const ok = list && list.every((c, i) => c === G.pad(G.toGray(i), c.length));
+    $('refCheck').textContent = ok ? t('ref.check', { count: list.length }) : '';
+    $('refPrev').disabled = refl.s === 0;
+    $('refNext').disabled = refl.s === last;
+  }
+
+  function renderHanoi() {
+    const total = hanoi.moves.length;
+    const pegs = G.hanoiState(hanoi.n, hanoi.moves, hanoi.k);
+    const mv = hanoi.k > 0 ? hanoi.moves[hanoi.k - 1] : null;
+    const frag = document.createDocumentFragment();
+    pegs.forEach((stack, pi) => {
+      const peg = document.createElement('div');
+      peg.className = 'peg';
+      const pole = document.createElement('div');
+      pole.className = 'pole';
+      for (const d of stack) {
+        const disk = document.createElement('div');
+        disk.className = `disk${mv && mv.disk === d ? ' moved' : ''}`;
+        disk.style.setProperty('--w', String(d / hanoi.n));
+        disk.textContent = String(d);
+        pole.append(disk);
+      }
+      const lab = document.createElement('div');
+      lab.className = 'peg-label';
+      lab.textContent = t(`hanoi.peg${pi}`);
+      peg.append(pole, lab);
+      frag.append(peg);
+    });
+    $('hanoiView').replaceChildren(frag);
+    const gray = G.pad(G.toGray(hanoi.k), hanoi.n);
+    $('hanoiStatus').textContent = !mv
+      ? t('hanoi.start', { total, gray })
+      : t(hanoi.k === total ? 'hanoi.done' : 'hanoi.status', { k: hanoi.k, total, d: mv.disk, from: t(`hanoi.peg${mv.from}`), to: t(`hanoi.peg${mv.to}`), gray });
+    $('hanoiPrev').disabled = hanoi.k === 0;
+    $('hanoiNext').disabled = hanoi.k === total;
+    const seq = document.createDocumentFragment();
+    G.rulerSeq(hanoi.n).forEach((v, i) => {
+      const chip = document.createElement('span');
+      chip.className = `chip${i + 1 === hanoi.k ? ' now' : ''}`;
+      chip.textContent = String(v);
+      seq.append(chip);
+    });
+    $('rulerSeq').replaceChildren(seq);
+    const ones = '1'.repeat(hanoi.n);
+    $('ringsText').textContent = t('rings.text', { n: hanoi.n, ones, bin: G.grayToBinBits(ones), v: G.ringsMoves(hanoi.n) });
+  }
+
+  const clampInt = (raw, lo, hi, fallback) => {
+    const x = Math.trunc(Number(raw));
+    return !Number.isFinite(x) || String(raw).trim() === '' ? fallback : Math.max(lo, Math.min(hi, x));
+  };
+
+  function initHow() {
+    $('refBits').addEventListener('change', (e) => {
+      refl.n = clampInt(e.target.value, 2, 5, refl.n);
+      e.target.value = String(refl.n);
+      refl.s = 0;
+      renderRefl();
+    });
+    $('refPrev').addEventListener('click', () => {
+      refl.s = Math.max(0, refl.s - 1);
+      renderRefl();
+    });
+    $('refNext').addEventListener('click', () => {
+      refl.s = Math.min(2 * (refl.n - 1), refl.s + 1);
+      renderRefl();
+    });
+    $('refReset').addEventListener('click', () => {
+      refl.s = 0;
+      renderRefl();
+    });
+    $('hanoiBits').addEventListener('change', (e) => {
+      hanoi.n = clampInt(e.target.value, 2, 6, hanoi.n);
+      e.target.value = String(hanoi.n);
+      hanoi.moves = G.hanoiMoves(hanoi.n);
+      hanoi.k = 0;
+      renderHanoi();
+    });
+    $('hanoiPrev').addEventListener('click', () => {
+      hanoi.k = Math.max(0, hanoi.k - 1);
+      renderHanoi();
+    });
+    $('hanoiNext').addEventListener('click', () => {
+      hanoi.k = Math.min(hanoi.moves.length, hanoi.k + 1);
+      renderHanoi();
+    });
+    $('hanoiReset').addEventListener('click', () => {
+      hanoi.k = 0;
+      renderHanoi();
+    });
+    renderRefl();
+    renderHanoi();
+  }
+
   // ── セキュリティタブ ──
   const leak = { n: 8, model: 'hd', data: null, chart: null };
   const dip = { n: 4, order: 'binary', k: 0 };
@@ -1003,6 +1167,8 @@
     renderConvertTexts();
     renderLeakTexts();
     renderDip();
+    renderRefl();
+    renderHanoi();
     renderLearn();
   }
 
@@ -1014,6 +1180,7 @@
     initDisc();
     initConvert();
     initSecurity();
+    initHow();
     renderLearn();
     const theme = $('themeToggle');
     GrayTheme.refresh(theme);
