@@ -54,3 +54,9 @@ test('日本語の表記（「分かる」は開く、ですます調）', () =>
     assert.ok(!v.includes('分かる') && !v.includes('分かり'), k);
   }
 });
+
+test('日本語の文言で、日本語と英数字のあいだに半角空白を入れない', () => {
+  const J = '[\u3040-\u30ff\u3400-\u9fff\uff00-\uffef]';
+  const bad = new RegExp(`${J} [A-Za-z0-9(\`]|[A-Za-z0-9)\`] ${J}`);
+  for (const [k, v] of Object.entries(ja)) assert.doesNotMatch(v, bad, k);
+});

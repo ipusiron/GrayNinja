@@ -304,26 +304,30 @@
       }
       ctx.stroke();
     }
-    // リングに0/1を書く（文字が入る大きさのときだけ）
-    if ($('showNumbers').checked) {
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      for (let k = 0; k < n; k++) {
-        const r1 = rOuter - k * (ring + gap);
-        const mid = r1 - ring / 2;
-        const arc = (2 * Math.PI * mid) / size;
-        const fs = Math.min(ring * 0.6, arc * 0.6, px * 0.04);
-        if (fs < px * 0.018) continue;
-        ctx.font = `${fs}px ui-monospace, Consolas, monospace`;
-        for (let s = 0; s < size; s++) {
-          const bit = (G.codeOf(s, kind) >>> (n - 1 - k)) & 1;
-          const a = rad((s + 0.5) * w);
-          ctx.fillStyle = bit ? color0 : color1;
-          ctx.fillText(String(bit), c + mid * Math.cos(a), c + mid * Math.sin(a));
-        }
+    return { canvas: off, rOuter, rInner, ring, gap, color0, color1 };
+  }
+
+  // リングに0/1を書く（文字が入る大きさのときだけ）。ディスクと一緒に回すと逆さまになるので、毎回正立で描く
+  function drawNumbers(ctx, kind, geo, px) {
+    const n = disc.n;
+    const size = 1 << n;
+    const c = px / 2;
+    const w = 360 / size;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let k = 0; k < n; k++) {
+      const mid = geo.rOuter - k * (geo.ring + geo.gap) - geo.ring / 2;
+      const arc = (2 * Math.PI * mid) / size;
+      const fs = Math.min(geo.ring * 0.6, arc * 0.6, px * 0.04);
+      if (fs < px * 0.018) continue;
+      ctx.font = `${fs}px ui-monospace, Consolas, monospace`;
+      for (let s = 0; s < size; s++) {
+        const bit = (G.codeOf(s, kind) >>> (n - 1 - k)) & 1;
+        const a = (((s + 0.5) * w - disc.phi - 90) * Math.PI) / 180;
+        ctx.fillStyle = bit ? geo.color0 : geo.color1;
+        ctx.fillText(String(bit), c + mid * Math.cos(a), c + mid * Math.sin(a));
       }
     }
-    return { canvas: off, rOuter, rInner };
   }
 
   function resizeDiscs() {
@@ -350,7 +354,8 @@
     const px = cv.width;
     if (!px) return;
     if (!disc.cache[kind]) disc.cache[kind] = renderStatic(kind, px);
-    const { canvas: img, rOuter, rInner } = disc.cache[kind];
+    const geo = disc.cache[kind];
+    const { canvas: img, rOuter, rInner } = geo;
     const ctx = cv.getContext('2d');
     const c = px / 2;
     ctx.clearRect(0, 0, px, px);
@@ -360,6 +365,7 @@
     ctx.rotate((-disc.phi * Math.PI) / 180);
     ctx.drawImage(img, -c, -c);
     ctx.restore();
+    if ($('showNumbers').checked) drawNumbers(ctx, kind, geo, px);
     const w = G.sectorWidth(disc.n);
     const s = G.sectorAt(disc.phi, disc.n);
     // 読み取ったセクターを囲む（画面上の角度 = ディスク上の角度 − phi）

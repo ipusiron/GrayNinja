@@ -4,94 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-GrayNinja is a visual educational tool for understanding Gray (Reflected Binary) Code. It's a single-page web application built with vanilla JavaScript, HTML, and CSS that provides interactive visualizations, conversions, and applications of Gray code.
+GrayNinja is an educational tool for the Gray code (reflected binary code). It is a static single-page web app (vanilla JavaScript, HTML, CSS, no build step, no dependencies) published on GitHub Pages: https://ipusiron.github.io/GrayNinja/
 
-## Development Commands
+## Commands
 
-This is a static web application with no build process:
-- **Run locally**: Open `index.html` directly in a browser or use a local server:
-  ```bash
-  python -m http.server 8000
-  # or
-  npx http-server
-  ```
-- **Deploy**: The site is deployed to GitHub Pages (https://ipusiron.github.io/GrayNinja/)
+- Run locally: open `index.html` directly, or `python -m http.server 8000`
+- Test: `npm test` (runs `node --test`; no packages to install). CI runs the same on GitHub Actions (`.github/workflows/test.yml`)
 
 ## Architecture
 
-The application follows a tab-based single-page architecture with 4 tabs:
-- **Basics (基本)**: Value slider, auto-play, sequence comparison table
-- **Disc (ディスク)**: Canvas-based rotary encoder visualization
-- **Convert (変換)**: Binary/Gray conversion utilities with step-by-step calculation display
-- **Use Cases (座学)**: Application examples in various fields
+Scripts are classic scripts (not modules) loaded in this order; each puts one object on `globalThis`:
 
-### Core Files
-- `index.html`: Main HTML structure with CSP headers and tab panels
-- `script.js`: All JavaScript logic (~950 lines)
-- `style.css`: All styling including responsive design, animations, and dark/light themes
+1. `js/theme-init.js` (in `<head>`): applies the saved theme (`grayninja-theme`) before rendering; otherwise the OS setting (`prefers-color-scheme`) applies
+2. `js/gray-core.js` → `GrayCore`: pure functions, no DOM
+   - `normalizeBits(input)`: accepts 0/1, full-width 0/1, spaces/tabs/newlines/`_` as separators, a leading `0b`; any other character returns `{ ok: false, error: 'invalidChar', char, index }`. Limit `MAX_BITS` = 1,024
+   - `binToGrayBits` / `grayToBinBits` / `steps`: work on bit strings (never convert to 32-bit integers)
+   - `sequence(n)`: comparison table rows (n = 1..12) with Hamming distances and flipped bit positions
+   - Disc: `sectorAt(phi, n)`, `sectorCenter`, `ringRuns(n, k, kind)` (runs of equal bits per ring, for drawing), `readAt(phi, n, kind, offsets)`
+3. `js/messages.js` → `GrayMessages`: Japanese and English dictionaries with identical keys. `**bold**`, `[text](https://…)` and `\n` are rendered as elements by `i18n.js` (never as HTML)
+4. `js/i18n.js` → `GrayI18n`: language detection (`?lang=` → saved `grayninja-lang` → browser language), `data-i18n` / `data-i18n-attr` replacement
+5. `js/theme.js` → `GrayTheme`: light/dark toggle
+6. `js/app.js`: the screen (tabs, comparison table, discs, conversion, Learn cards). All text comes from `messages.js`
 
-### Key Components in script.js
+### Disc model
 
-1. **Utility Functions** (lines 1-71):
-   - `$()`: DOM element selector shortcut
-   - `pad()`: Binary string padding
-   - `hdist()`: Hamming distance calculation (Brian Kernighan's algorithm)
-   - `binToGray()`: Binary to Gray conversion (`b ^ (b >>> 1)`)
-   - `grayToBin()`: Gray to Binary conversion (cumulative XOR)
+There is a single angle `disc.phi`. The read line is fixed at the top and the disc rotates by `−phi`, so the sector under the read line is `GrayCore.sectorAt(phi, n)`. Each disc is drawn once into an offscreen canvas (cached per size, bit count, options and theme) and rotated on every frame. Rotation is time-based (`requestAnimationFrame`, degrees per second).
 
-2. **Tab System** (lines 73-104):
-   - Tab switching with lazy rendering for encoder disc
+## Conventions
 
-3. **Basics Tab** (lines 106-341):
-   - Global state: `n` (bit count), `val` (current value), `autoplay` timer
-   - `syncBasicsBounds()`: Updates slider ranges when bit count changes
-   - `setVal()`: Value setter with validation and wrap-around support
-   - `renderBasics()`: Updates display and generates comparison table
-   - Keyboard shortcuts: Arrow keys, Space for auto-play
-
-4. **Encoder Disc Tab** (lines 343-612):
-   - `drawDisc()`: Canvas rendering with concentric rings
-   - `renderDiscAll()`: Full disc update with sector information
-   - Two animation modes: disc rotation and sector stepping
-   - CSS variable-based theming for canvas colors
-
-5. **Convert Tab** (lines 614-880):
-   - `convert()`: Conversion with input validation
-   - `generateBinaryToGraySteps()` / `generateGrayToBinarySteps()`: Step-by-step calculation generators
-   - `displaySteps()`: Safe DOM rendering (XSS-protected)
-
-6. **Theme & Initialization** (lines 882-951):
-   - `initializeThemeToggle()`: Dark/light mode with localStorage persistence
-   - `init()`: Application bootstrap
-
-### Canvas Rendering
-
-The encoder disc uses HTML5 Canvas with:
-- Concentric rings representing bit positions (outer = MSB)
-- Sector highlighting for current position
-- Optional number display overlay
-- CSS variable integration for theme-aware colors (`getCSSVar()`)
-
-### State Management
-
-Global variables:
-- `n`: Current bit count (1-12)
-- `val`: Current value for basics tab
-- `currentAngle`: Sector position angle (0-359)
-- `discRotationAngle`: Disc rotation for animation
-- Timer references: `autoplay`, `spinTimer`, `discRotateTimer`
-
-## Security Implementation
-
-The application implements several security measures (documented in README.md):
-- Content Security Policy (CSP) meta tag
-- XSS prevention: Uses `textContent` and `createElement` instead of `innerHTML` for user-controlled content
-- Input validation: Range checking (1-12 bits), type validation, DoS protection (max 32-bit input)
-- Safe localStorage handling with try-catch and value validation
-
-## Gray Code Implementation Details
-
-The core algorithms use bitwise operations:
-- `binToGray(b)`: Returns `b ^ (b >>> 1)`
-- `grayToBin(g)`: Cumulative XOR from MSB using a while loop
-- Hamming distance uses Brian Kernighan's bit counting algorithm
+- CSP is `script-src 'self'; style-src 'self'`: no inline scripts, no `style` attributes, no inline event handlers
+- Build DOM with `textContent` / `createElement`; never use `innerHTML`
+- Every user-visible string goes into both dictionaries in `messages.js`
+- Colors are CSS variables in `style.css` (light in `:root`, dark in both the `prefers-color-scheme` block and `:root[data-theme="dark"]`, which must stay identical). Text contrast must stay ≥ 4.5:1 (checked by `test/css.test.js`)
+- Keyboard shortcuts on the Basics tab must not fire when a button, input, tab or other focusable element has focus
+- Claims in the Learn tab and README must be backed by primary sources (patents, papers, standards, manufacturer documents). Do not reintroduce claims such as "Gray code is a side-channel countermeasure", "it is robust against fault injection", or "it corrects errors"
