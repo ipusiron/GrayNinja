@@ -286,7 +286,55 @@
     return out.join('');
   }
 
+  // ── しくみ（反射で作る・ルーラー列・ハノイの塔・チャイニーズリング）──
+  // 反射で作る各段の列。stages[k] は (k+1) ビットの列（G(1) = [0, 1]、G(k+1) = 0+G(k) と 1+逆順のG(k)）
+  function reflectStages(n) {
+    const N = Math.max(1, Math.min(MAX_N, Math.trunc(n)));
+    const stages = [['0', '1']];
+    for (let k = 1; k < N; k++) {
+      const prev = stages[k - 1];
+      stages.push([...prev.map((c) => `0${c}`), ...[...prev].reverse().map((c) => `1${c}`)]);
+    }
+    return stages;
+  }
+
+  // ルーラー列: グレイコードで k−1 → k のときに反転するビットの位置（下から数えて1始まり）。k = 1〜2^n−1
+  const rulerSeq = (n) => Array.from({ length: 2 ** Math.max(1, Math.min(MAX_N, Math.trunc(n))) - 1 }, (_, i) => flipBit(i + 1) + 1);
+
+  // ハノイの塔の最短手順（n 枚、杭 0 から杭 2 へ）。k 手目に動かす円盤は flipBit(k)+1（1が最小）
+  // 最小の円盤は一定の向きに巡回し（n が偶数なら 0→1→2、奇数なら 0→2→1）、ほかの手は最小の円盤を動かさない唯一の合法手
+  function hanoiMoves(n) {
+    const N = Math.max(1, Math.min(10, Math.trunc(n)));
+    const pegs = [Array.from({ length: N }, (_, i) => N - i), [], []];
+    const dir = N % 2 === 0 ? 1 : 2;
+    const moves = [];
+    const top = (p) => (pegs[p].length ? pegs[p][pegs[p].length - 1] : Infinity);
+    for (let k = 1; k < 2 ** N; k++) {
+      const disk = flipBit(k) + 1;
+      const from = pegs.findIndex((p) => p.length && p[p.length - 1] === disk);
+      let to;
+      if (disk === 1) to = (from + dir) % 3;
+      else to = [0, 1, 2].find((p) => p !== from && top(p) > disk); // 最小の円盤がある杭は top が1なので外れる
+      pegs[from].pop();
+      pegs[to].push(disk);
+      moves.push({ disk, from, to });
+    }
+    return moves;
+  }
+
+  // ハノイの塔の k 手目まで進めたときの杭の状態
+  function hanoiState(n, moves, k) {
+    const N = Math.max(1, Math.min(10, Math.trunc(n)));
+    const pegs = [Array.from({ length: N }, (_, i) => N - i), [], []];
+    for (let j = 0; j < k; j++) pegs[moves[j].to].push(pegs[moves[j].from].pop());
+    return pegs;
+  }
+
+  // チャイニーズリング: n 個の輪をすべて外すのに必要な最小の手数＝ 11…1（n個）をグレイコードとして2進に直した値
+  const ringsMoves = (n) => Number(BigInt('0b' + grayToBinBits('1'.repeat(Math.max(1, Math.min(30, Math.trunc(n)))))));
+
   globalThis.GrayCore = {
+    reflectStages, rulerSeq, hanoiMoves, hanoiState, ringsMoves,
     LEAK_MODELS, counterLeak, leakSummary, flipsUpTo, bruteFlips, deBruijn,
     OFFSET_PATTERNS, seeded, sensorOffsets, ringDistance, sweep,
     MAX_BITS, MAX_STEP_BITS, MIN_N, MAX_N,

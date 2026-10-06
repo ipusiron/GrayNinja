@@ -369,3 +369,43 @@ test('De Bruijn 列: 長さ 2^n の巡回列で、長さ n の窓に全パター
   assert.equal(2 ** 12 + 12 - 1, 4107);
   assert.equal(12 * 2 ** 12, 49152);
 });
+
+// ── しくみ（反射で作る・ルーラー列・ハノイの塔・チャイニーズリング）──
+test('反射で作った列は、b ⊕ (b ≫ 1) で求めた列と一致する（1〜12ビット）', () => {
+  const stages = G.reflectStages(12);
+  assert.equal(stages.length, 12);
+  for (let k = 1; k <= 12; k++) assert.deepEqual(stages[k - 1], G.sequence(k).map((r) => r.gray), `k=${k}`);
+  assert.deepEqual(G.reflectStages(3)[2], ['000', '001', '011', '010', '110', '111', '101', '100']);
+});
+
+test('ルーラー列（OEIS A001511 の先頭）', () => {
+  assert.deepEqual(G.rulerSeq(5).slice(0, 16), [1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1, 5]);
+  assert.equal(G.rulerSeq(6).length, 63);
+});
+
+test('ハノイの塔: 2^n−1 手で、どの手も小さい円盤の上に大きい円盤を置かず、k 手目の円盤はルーラー列と一致する', () => {
+  for (let n = 1; n <= 8; n++) {
+    const moves = G.hanoiMoves(n);
+    assert.equal(moves.length, 2 ** n - 1);
+    const pegs = [Array.from({ length: n }, (_, i) => n - i), [], []];
+    moves.forEach((m, j) => {
+      const src = pegs[m.from];
+      assert.equal(src[src.length - 1], m.disk, `n=${n} move ${j + 1}`);
+      const dst = pegs[m.to];
+      assert.ok(!dst.length || dst[dst.length - 1] > m.disk, `n=${n} move ${j + 1}`);
+      dst.push(src.pop());
+      assert.equal(m.disk, G.flipBit(j + 1) + 1);
+    });
+    assert.deepEqual(pegs, [[], [], Array.from({ length: n }, (_, i) => n - i)]);
+    assert.deepEqual(G.hanoiState(n, moves, moves.length), pegs);
+    assert.deepEqual(G.hanoiState(n, moves, 0), [Array.from({ length: n }, (_, i) => n - i), [], []]);
+  }
+});
+
+test('チャイニーズリング: すべて掛かった n 個の輪を外す最小の手数（偶数なら (2^(n+1)−2)/3、奇数なら (2^(n+1)−1)/3）', () => {
+  for (let n = 1; n <= 20; n++) {
+    const want = n % 2 === 0 ? (2 ** (n + 1) - 2) / 3 : (2 ** (n + 1) - 1) / 3;
+    assert.equal(G.ringsMoves(n), want, `n=${n}`);
+  }
+  assert.deepEqual([1, 2, 3, 4, 5, 6].map(G.ringsMoves), [1, 2, 5, 10, 21, 42]);
+});
