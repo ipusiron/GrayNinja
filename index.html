@@ -145,11 +145,32 @@
           <label class="check"><input id="showNumbers" type="checkbox"> <span data-i18n="disc.optNumbers"></span></label>
           <label class="check"><input id="highlightSector" type="checkbox" checked> <span data-i18n="disc.optHighlight"></span></label>
         </fieldset>
+        <fieldset class="options" id="offsetBox">
+          <legend data-i18n="mis.title"></legend>
+          <label class="check"><input id="offsetOn" type="checkbox"> <span data-i18n="mis.on"></span></label>
+          <div class="control-row">
+            <label for="offsetPattern" data-i18n="mis.pattern"></label>
+            <select id="offsetPattern">
+              <option value="alternate" data-i18n="mis.alternate"></option>
+              <option value="linear" data-i18n="mis.linear"></option>
+              <option value="random" data-i18n="mis.random"></option>
+            </select>
+          </div>
+          <div class="control-row range-row">
+            <label for="offsetAmount" data-i18n="mis.amount"></label>
+            <output id="offsetAmountValue" for="offsetAmount"></output>
+            <input id="offsetAmount" type="range" min="0" max="150" step="5" value="10">
+          </div>
+          <div class="control-row">
+            <button id="offsetShuffle" type="button" data-i18n="mis.shuffle"></button>
+          </div>
+          <p class="hint" data-i18n="mis.hint"></p>
+        </fieldset>
         <h3 class="sub-title" data-i18n="disc.reading"></h3>
         <div class="cards">
           <div class="card"><div class="k" data-i18n="disc.sector"></div><div class="v mono" id="sectorOut"></div></div>
-          <div class="card"><div class="k" data-i18n="disc.grayRead"></div><div class="v mono" id="discGray"></div></div>
-          <div class="card"><div class="k" data-i18n="disc.binRead"></div><div class="v mono" id="discBinary"></div></div>
+          <div class="card"><div class="k" data-i18n="disc.grayRead"></div><div class="v mono" id="discGray"></div><div class="status" id="discGrayStatus"></div></div>
+          <div class="card"><div class="k" data-i18n="disc.binRead"></div><div class="v mono" id="discBinary"></div><div class="status" id="discBinaryStatus"></div></div>
         </div>
       </aside>
 
@@ -170,6 +191,28 @@
           <span class="swatch swatch-read" aria-hidden="true"></span><span data-i18n="disc.legendText"></span>
         </p>
         <p class="hint" data-i18n="disc.hint"></p>
+        <section id="sweepBox" class="sweep" hidden>
+          <h3 class="sub-title" data-i18n="sw.title"></h3>
+          <p class="hint" id="sweepLead"></p>
+          <div class="tableWrap sweep-table">
+            <table id="sweepTbl">
+              <caption class="sr-only" data-i18n="sw.caption"></caption>
+              <thead>
+                <tr><th scope="col" data-i18n="sw.thKind"></th><th scope="col" data-i18n="sw.thExact"></th><th scope="col" data-i18n="sw.thAdjacent"></th><th scope="col" data-i18n="sw.thFar"></th><th scope="col" data-i18n="sw.thMax"></th><th scope="col" data-i18n="sw.thExamples"></th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <canvas id="sweepChart" role="img"></canvas>
+          <p class="legend">
+            <span class="swatch swatch-line swatch-truth" aria-hidden="true"></span><span data-i18n="sw.legendTruth"></span>
+            <span class="swatch swatch-line swatch-gray" aria-hidden="true"></span><span data-i18n="sw.legendGray"></span>
+            <span class="swatch swatch-line swatch-bin" aria-hidden="true"></span><span data-i18n="sw.legendBin"></span>
+            <span class="swatch swatch-read" aria-hidden="true"></span><span data-i18n="sw.legendNow"></span>
+          </p>
+          <p class="hint" id="sweepOffsets"></p>
+          <p class="note" data-i18n="sw.note"></p>
+        </section>
       </section>
     </div>
   </section>

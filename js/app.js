@@ -29,6 +29,7 @@
     if (name !== 'basics') stopAuto();
     if (name === 'disc') {
       resizeDiscs();
+      resizeChart();
     } else {
       stopSpin();
     }
@@ -248,7 +249,14 @@
 
   // ── ディスクタブ ──
   // 角度は disc.phi の1つだけ。読み取り線は真上に固定で、ディスクのほうが回る。読み取り値は読み取り線の下のセクター
-  const disc = { n: 4, phi: G.sectorCenter(0, 4), spinning: false, last: 0, raf: 0, cache: {}, size: 0, lastSector: -1 };
+  const disc = {
+    n: 4, phi: G.sectorCenter(0, 4), spinning: false, last: 0, raf: 0, cache: {}, size: 0, lastSector: -1,
+    // センサーのずれ（誤読シミュレーター）。amount はセクター幅に対する割合
+    offsetOn: false, pattern: 'alternate', amount: 0.1, seed: 1, sweep: null, chart: null
+  };
+
+  // センサーのずれ（度、外側のリングから）。オフなら null（ずれなし）
+  const offsets = () => (disc.offsetOn ? G.sensorOffsets(disc.n, disc.pattern, disc.amount, disc.seed) : null);
   const CANVAS = { gray: 'discCanvasGray', binary: 'discCanvasBinary' };
 
   const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -391,16 +399,47 @@
     ctx.arc(c, c, Math.max(3, px / 100), 0, Math.PI * 2);
     ctx.fillStyle = cssVar('--disc-read');
     ctx.fill();
+    // ずらしたセンサーの位置（画面上の角度 = ずれ。各リングの中央に点を打つ）
+    const off = offsets();
+    if (off) {
+      for (let k = 0; k < disc.n; k++) {
+        const mid = rOuter - k * (geo.ring + geo.gap) - geo.ring / 2;
+        const a = ((off[k] - 90) * Math.PI) / 180;
+        ctx.beginPath();
+        ctx.arc(c + mid * Math.cos(a), c + mid * Math.sin(a), Math.max(3, Math.min(geo.ring * 0.22, px / 60)), 0, Math.PI * 2);
+        ctx.fillStyle = cssVar('--disc-read');
+        ctx.fill();
+        ctx.lineWidth = Math.max(1.5, px / 300);
+        ctx.strokeStyle = cssVar('--disc-0');
+        ctx.stroke();
+      }
+    }
+  }
+
+  // 読み取りの状態（正しい値／隣の値／誤読）。ずれがオフのときは出さない
+  function renderStatus(id, r, n) {
+    const el = $(id);
+    if (!disc.offsetOn) {
+      el.textContent = '';
+      el.className = 'status';
+      return;
+    }
+    const d = G.ringDistance(r.value, r.sector, n);
+    el.textContent = d === 0 ? t('mis.statusExact') : d === 1 ? t('mis.statusAdjacent') : t('mis.statusFar', { d });
+    el.className = `status ${d === 0 ? 'ok' : d === 1 ? 'adj' : 'far'}`;
   }
 
   function renderReading() {
     const n = disc.n;
     const s = G.sectorAt(disc.phi, n);
-    const g = G.readAt(disc.phi, n, 'gray');
-    const b = G.readAt(disc.phi, n, 'binary');
+    const off = offsets();
+    const g = G.readAt(disc.phi, n, 'gray', off);
+    const b = G.readAt(disc.phi, n, 'binary', off);
     $('sectorOut').textContent = t('disc.sectorValue', { s, total: 1 << n });
     $('discGray').textContent = t('disc.readValue', { code: G.pad(g.code, n), v: g.value });
     $('discBinary').textContent = t('disc.readValue', { code: G.pad(b.code, n), v: b.value });
+    renderStatus('discGrayStatus', g, n);
+    renderStatus('discBinaryStatus', b, n);
     $('angle').value = String(Math.round(disc.phi * 10) / 10);
     $('angleValue').textContent = t('disc.angleValue', { a: (Math.round(disc.phi * 10) / 10).toFixed(1) });
     if (s !== disc.lastSector) {
@@ -414,6 +453,129 @@
     drawOne('gray');
     drawOne('binary');
     renderReading();
+    if (disc.sweep) drawChart();
+  }
+
+  // ── 一周の集計とグラフ（ずれがオンのとき）──
+  const pct = (x, total) => ((Math.round((10000 * x) / total)) / 100).toFixed(2);
+
+  function computeSweep() {
+    $('sweepBox').hidden = !disc.offsetOn;
+    disc.chart = null;
+    if (!disc.offsetOn) {
+      disc.sweep = null;
+      return;
+    }
+    const off = offsets();
+    disc.sweep = { gray: G.sweep(disc.n, 'gray', off), binary: G.sweep(disc.n, 'binary', off), off };
+    renderSweepTexts();
+    resizeChart();
+  }
+
+  function renderSweepTexts() {
+    if (!disc.sweep) return;
+    const { gray, binary, off } = disc.sweep;
+    $('sweepLead').textContent = t('sw.lead', { samples: gray.total.toLocaleString('en-US') });
+    const frag = document.createDocumentFragment();
+    for (const [kind, r] of [['sw.kindGray', gray], ['sw.kindBin', binary]]) {
+      const tr = document.createElement('tr');
+      const cells = [
+        t(kind),
+        t('sw.pct', { p: pct(r.exact, r.total) }),
+        t('sw.pct', { p: pct(r.adjacent, r.total) }),
+        t('sw.pct', { p: pct(r.far, r.total) }),
+        r.far ? t('sw.maxValue', { d: r.maxErr }) : t('sw.none'),
+        r.worst.length ? r.worst.slice(0, 3).map((x) => `${x.truth}→${x.read}`).join(', ') : t('sw.none')
+      ];
+      cells.forEach((v, i) => {
+        const cell = document.createElement(i ? 'td' : 'th');
+        if (!i) cell.scope = 'row';
+        cell.textContent = v;
+        tr.append(cell);
+      });
+      if (r.far) tr.classList.add('has-far');
+      frag.append(tr);
+    }
+    $('sweepTbl').querySelector('tbody').replaceChildren(frag);
+    const fmt = (deg) => `${deg >= 0 ? '+' : '−'}${Math.abs(deg).toFixed(1)}°`;
+    $('sweepOffsets').textContent = t('sw.offsets', { list: off.map(fmt).join(', ') });
+    $('sweepChart').setAttribute('aria-label', t('sw.chartAlt', { g: pct(gray.far, gray.total), b: pct(binary.far, binary.total) }));
+  }
+
+  function resizeChart() {
+    const cv = $('sweepChart');
+    if (!disc.sweep) return;
+    const css = Math.round(cv.getBoundingClientRect().width);
+    if (!css) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const W = Math.round(css * dpr);
+    const H = Math.round(200 * dpr);
+    if (cv.width !== W || cv.height !== H) {
+      cv.width = W;
+      cv.height = H;
+      disc.chart = null;
+    }
+    drawChart();
+  }
+
+  // グラフの絵（いまの位置の線を除く）。横軸はディスクの位置 0〜360°、縦軸は読んだ値 0〜2ⁿ−1
+  function renderChartStatic(W, H) {
+    const off = document.createElement('canvas');
+    off.width = W;
+    off.height = H;
+    const ctx = off.getContext('2d');
+    const S = 1 << disc.n;
+    const pad = Math.round(H * 0.06);
+    const x = (phi) => (phi / 360) * W;
+    const y = (v) => H - pad - ((v + 0.5) / S) * (H - 2 * pad);
+    ctx.strokeStyle = cssVar('--border');
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
+    const line = (pts, color, width, dash) => {
+      ctx.beginPath();
+      ctx.setLineDash(dash || []);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      pts.forEach(([p, v], i) => (i ? ctx.lineTo(x(p), y(v)) : ctx.moveTo(x(p), y(v))));
+      ctx.stroke();
+      ctx.setLineDash([]);
+    };
+    const truth = [];
+    for (let s = 0; s < S; s++) truth.push([(s * 360) / S, s], [((s + 1) * 360) / S, s]);
+    const unit = Math.max(1, H / 200);
+    line(truth, cssVar('--chart-truth'), unit, [6 * unit, 4 * unit]);
+    line(disc.sweep.binary.points, cssVar('--chart-bin'), 1.5 * unit);
+    line(disc.sweep.gray.points, cssVar('--chart-gray'), 1.5 * unit);
+    return off;
+  }
+
+  function drawChart() {
+    const cv = $('sweepChart');
+    if (!cv.width || !disc.sweep) return;
+    if (!disc.chart) disc.chart = renderChartStatic(cv.width, cv.height);
+    const ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.drawImage(disc.chart, 0, 0);
+    const xx = (disc.phi / 360) * cv.width;
+    ctx.beginPath();
+    ctx.moveTo(xx, 0);
+    ctx.lineTo(xx, cv.height);
+    ctx.strokeStyle = cssVar('--disc-read');
+    ctx.lineWidth = Math.max(2, cv.height / 120);
+    ctx.stroke();
+  }
+
+  function renderOffsetControls() {
+    $('offsetPattern').disabled = !disc.offsetOn;
+    $('offsetAmount').disabled = !disc.offsetOn;
+    $('offsetShuffle').disabled = !disc.offsetOn || disc.pattern !== 'random';
+    $('offsetAmountValue').textContent = t('mis.amountValue', { p: Math.round(disc.amount * 100) });
+  }
+
+  function updateOffsets() {
+    renderOffsetControls();
+    computeSweep();
+    drawDiscs();
   }
 
   function setPhi(phi) {
@@ -461,6 +623,7 @@
     $('discBits').value = String(disc.n);
     disc.cache = {};
     disc.lastSector = -1;
+    computeSweep();
     drawDiscs();
   }
 
@@ -484,6 +647,22 @@
     };
     $('prevSector').addEventListener('click', () => jump(-1));
     $('nextSector').addEventListener('click', () => jump(1));
+    $('offsetOn').addEventListener('change', (e) => {
+      disc.offsetOn = e.target.checked;
+      updateOffsets();
+    });
+    $('offsetPattern').addEventListener('change', (e) => {
+      disc.pattern = G.OFFSET_PATTERNS.includes(e.target.value) ? e.target.value : 'alternate';
+      updateOffsets();
+    });
+    $('offsetAmount').addEventListener('input', (e) => {
+      disc.amount = Number(e.target.value) / 100;
+      updateOffsets();
+    });
+    $('offsetShuffle').addEventListener('click', () => {
+      disc.seed = (disc.seed % 999983) + 1;
+      updateOffsets();
+    });
     for (const id of ['showNumbers', 'highlightSector']) {
       $(id).addEventListener('change', () => {
         disc.cache = {};
@@ -493,10 +672,16 @@
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) stopSpin();
     });
-    if (window.ResizeObserver) new ResizeObserver(() => activeTab === 'disc' && resizeDiscs()).observe(document.querySelector('.discs'));
-    else window.addEventListener('resize', () => activeTab === 'disc' && resizeDiscs());
+    const onResize = () => {
+      if (activeTab !== 'disc') return;
+      resizeDiscs();
+      resizeChart();
+    };
+    if (window.ResizeObserver) new ResizeObserver(onResize).observe(document.querySelector('#panel-disc .viz'));
+    else window.addEventListener('resize', onResize);
     renderSpinSpeed();
     renderSpinButton();
+    renderOffsetControls();
   }
 
   // ── 変換タブ ──
@@ -624,6 +809,8 @@
     renderSpinButton();
     disc.lastSector = -1;
     renderReading();
+    renderOffsetControls();
+    renderSweepTexts();
     renderConvertTexts();
     renderLearn();
   }
@@ -643,6 +830,7 @@
     $('langToggle').addEventListener('click', () => I.set(I.lang === 'ja' ? 'en' : 'ja'));
     GrayTheme.onChange(() => {
       disc.cache = {};
+      disc.chart = null;
       if (activeTab === 'disc') drawDiscs();
     });
     I.onChange(renderDynamicTexts);

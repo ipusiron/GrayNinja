@@ -12,7 +12,7 @@ English · [日本語](README.md)
 
 **GrayNinja** is a tool for learning the Gray code (reflected binary code) through four screens: a comparison table, encoder discs, step-by-step conversion, and source-backed notes.
 
-The Gray code is a binary code ordered so that adjacent values always differ in exactly one bit. Two discs (Gray and binary) rotate to the same angle, so you can compare how many rings change at once when a sector boundary is crossed.
+The Gray code is a binary code ordered so that adjacent values always differ in exactly one bit. Two discs (Gray and binary) rotate to the same angle, so you can compare how many rings change at once when a sector boundary is crossed. A misread simulator offsets the sensors of the read head and shows in numbers how far off the binary disc can read.
 
 ---
 
@@ -26,8 +26,8 @@ Try it directly in your browser.
 
 ## 📸 Screenshots
 
->![Disc tab (the 7/8 boundary)](assets/en/screenshot.png)
->*A 4-bit disc just past the boundary from 7 to 8. One ring changes on the Gray disc and four on the binary disc*
+>![Disc tab (misread simulator)](assets/en/screenshot.png)
+>*Sensors offset alternately by 10% of a sector width; just before the 7/8 boundary the binary disc misreads 13*
 
 >![Basics tab (comparison table)](assets/en/screenshot-basics.png)
 >*The comparison table highlights the bits that changed from the previous value. 7→8 changes 4 bits in binary and 1 bit in Gray*
@@ -45,6 +45,7 @@ Try it directly in your browser.
 - Four tabs (Basics, Disc, Convert, Learn) walk through the properties and uses of the Gray code.
 - The comparison table supports 1 to 12 bits and highlights the changed bits in both binary and Gray.
 - Two encoder discs rotate to the same angle, so the sector under the read line can be read in Gray and in binary side by side.
+- The misread simulator offsets the sensor of each ring and compares, for Gray and binary, how often a value farther than a neighbor is read over one turn and how large the error gets.
 - Conversion accepts up to 1,024 digits and shows digit-by-digit steps for up to 64 digits.
 - The Learn tab is based on patents, papers, standards, and manufacturer materials, and every card links to its source.
 - Japanese/English and light/dark theme switching (your choices are saved automatically).
@@ -66,6 +67,7 @@ Keyboard shortcuts work only while the Basics tab is shown and no button or inpu
 1. Move the "Disc position" slider slowly, or press "Next sector".
 2. Compare the code of the sector under the read line (the red line) and the value it represents, in Gray and in binary.
 3. Press "Rotate" to keep the discs turning at a constant speed.
+4. Turn on "Offset the sensor for each ring" to read each ring at its red dot. Change the pattern (alternating, gradually from outside to inside, random) and the size (0 to 150% of a sector width), and compare the misreadings in the summary table and graph for one full turn.
 
 The outer ring is the most significant bit and the inner ring the least significant bit. On the discs, the light color is 0 and the dark color is 1 (the same in both themes).
 
@@ -136,6 +138,17 @@ g₀ = b₁ ⊕ b₀ = 1 ⊕ 0 = 1   b₀ = b₁ ⊕ g₀ = 1 ⊕ 1 = 0
 
 Going through all 16 values from 0 to 15, the total number of changed bits is 26 in binary and 15 in Gray. In general, for n bits it is 2^(n+1)−n−2 in binary and 2^n−1 in Gray.
 
+### When the sensors are offset
+
+On a 4-bit disc, with the sensors offset alternately by 10% of a sector width (±2.3°) starting from the outer ring, reading one full turn at 4,096 angles gives the following.
+
+| Disc | Correct value | Neighboring value | Farther than a neighbor | Largest error |
+|---|---|---|---|---|
+| Gray | 89.84% | 10.16% | 0.00% | None |
+| Binary | 84.77% | 7.62% | 7.62% | 6 sectors |
+
+Just before the 7/8 boundary the binary disc reads 13 (`1101`). The Gray disc only reads the neighboring value slightly early near a boundary. The Gray code stays within a neighboring value only while every sensor is offset by less than half a sector; with a 60% offset even the Gray disc reads values two sectors away at 7.62% of the angles.
+
 ### What the Gray code cannot do
 
 - It cannot detect or correct errors. All 2^n patterns of n bits are used, so flipping one bit yields another valid codeword.
@@ -162,6 +175,7 @@ Going through all 16 values from 0 to 15, the total number of changed bits is 26
 - The discs have a single angle. The read line is fixed at the top and the disc rotates. The reading is the code of the sector under the read line.
 - Each disc is drawn once with runs of equal bits merged into single arcs, cached, and then rotated on every frame. Rotation advances by elapsed time multiplied by speed, so heavy drawing does not change the speed.
 - The comparison table is rebuilt only when the number of bits changes; changing the value just moves the marker on the selected row.
+- The misread simulator assumes that the sensor of ring k reads the sector at "disc position + offset k" and reads one full turn at 4,096 or more angles. Each reading is classified as correct, neighboring, or farther than a neighbor by its circular distance from the true sector.
 - The computational core (conversion, input normalization, steps, the table, and disc readings) lives in `js/gray-core.js` and is tested with `node --test`.
 
 ---
@@ -178,7 +192,7 @@ Going through all 16 values from 0 to 15, the total number of changed bits is 26
 ## ⚠️ Notes and limitations
 
 - The table and the discs go up to 12 bits. On a 12-bit disc the inner sectors are very fine and hard to tell apart without zooming.
-- The discs assume that the sector under the read line is read correctly; misreadings caused by offset sensors in a read head are not simulated.
+- The misread simulator covers only the angular offset of each ring's sensor. Sensor response delays, noise, and manufacturing errors of the disc are not modeled.
 - The Learn tab stays within what its sources say. See each card's source for details of each field.
 
 ---

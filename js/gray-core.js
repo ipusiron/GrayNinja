@@ -164,7 +164,73 @@
     return { code, value: decode(code, kind), sector: sectorAt(phi, N) };
   }
 
+  // ── センサーのずれ（誤読シミュレーター）──
+  // 種つきの乱数（mulberry32）。0以上1未満を返す関数
+  function seeded(seed) {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const OFFSET_PATTERNS = ['alternate', 'linear', 'random'];
+
+  // リングごとのセンサーのずれ（度）。amount はセクター幅に対する最大の割合（0.1 なら±10%）
+  //   alternate: 外側から +a, −a, +a, …  linear: 外側 +a から内側 −a へ等間隔  random: 種つきで −a〜+a
+  function sensorOffsets(n, pattern, amount, seed) {
+    const N = clampN(n);
+    const a = Math.max(0, Number(amount) || 0) * sectorWidth(N);
+    const rand = seeded(seed || 1);
+    return Array.from({ length: N }, (_, k) => {
+      if (pattern === 'linear') return N === 1 ? a : a - (2 * a * k) / (N - 1);
+      if (pattern === 'random') return (rand() * 2 - 1) * a;
+      return k % 2 ? -a : a;
+    });
+  }
+
+  // 円周上の距離（セクター数）
+  const ringDistance = (a, b, n) => {
+    const S = 1 << clampN(n);
+    const d = (((a - b) % S) + S) % S;
+    return Math.min(d, S - d);
+  };
+
+  // ディスクを一周させて、各角度で読んだ値と正しいセクターを比べる
+  // 戻り値: { total, exact, adjacent, far, maxErr, worst: [{ truth, read, err, count }]（ずれの大きい順に最大5件）, points: [[phi, read]] }
+  function sweep(n, kind, offsets, samplesPerSector) {
+    const N = clampN(n);
+    const S = 1 << N;
+    const sps = Math.max(1, Math.trunc(samplesPerSector || Math.max(8, Math.ceil(4096 / S))));
+    const w = 360 / S;
+    const res = { total: 0, exact: 0, adjacent: 0, far: 0, maxErr: 0, worst: [], points: [] };
+    const seen = new Map();
+    for (let i = 0; i < S * sps; i++) {
+      const phi = (i + 0.5) * (w / sps);
+      const r = readAt(phi, N, kind, offsets);
+      const err = ringDistance(r.value, r.sector, N);
+      res.total++;
+      res.points.push([phi, r.value]);
+      if (err === 0) res.exact++;
+      else if (err === 1) res.adjacent++;
+      else {
+        res.far++;
+        if (err > res.maxErr) res.maxErr = err;
+        const key = `${r.sector}>${r.value}`;
+        const hit = seen.get(key);
+        if (hit) hit.count++;
+        else seen.set(key, { truth: r.sector, read: r.value, err, count: 1 });
+      }
+    }
+    res.worst = [...seen.values()].sort((x, y) => y.err - x.err || x.truth - y.truth).slice(0, 5);
+    return res;
+  }
+
   globalThis.GrayCore = {
+    OFFSET_PATTERNS, seeded, sensorOffsets, ringDistance, sweep,
     MAX_BITS, MAX_STEP_BITS, MIN_N, MAX_N,
     toGray, fromGray, pad, popcount, hamming, clampN,
     normalizeBits, binToGrayBits, grayToBinBits, steps, bitsToDecimal,

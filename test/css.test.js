@@ -68,6 +68,12 @@ test('操作部品の枠・フォーカスの枠・ディスクの色が3:1以�
       assert.ok(r >= 3, `${name} ${f} on ${b} = ${r.toFixed(2)}`);
     }
   }
+  for (const [name, theme] of [['light', light], ['dark', { ...light, ...darkSaved }]]) {
+    for (const f of ['--chart-truth', '--chart-gray', '--chart-bin']) {
+      const r = ratio(theme[f], theme['--panel']);
+      assert.ok(r >= 3, `${name} ${f} on --panel = ${r.toFixed(2)}`);
+    }
+  }
   for (const [f, b] of [['--disc-1', '--disc-0'], ['--disc-read', '--disc-0'], ['--disc-highlight', '--disc-1']]) {
     const r = ratio(light[f], light[b]);
     assert.ok(r >= 3, `${f} on ${b} = ${r.toFixed(2)}`);
@@ -96,4 +102,9 @@ test('狭い画面で1カラムになる（ディスク・変換・操作欄）'
   const m640 = css.slice(css.indexOf('@media (max-width:640px)'));
   assert.match(m640, /\.discs\{\s*grid-template-columns:minmax\(0,1fr\)/);
   assert.match(block('.disc-fig canvas'), /width:100%/);
+});
+
+test('fieldset が中身の最小幅より縮める（英語の長い選択肢で狭い画面からはみ出さない）', () => {
+  assert.match(block('fieldset.options'), /min-inline-size:0/);
+  assert.match(block('fieldset.options select'), /width:100%/);
 });
