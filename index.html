@@ -328,13 +328,13 @@
         <div class="out"><code id="binOut2">1010</code></div>
         <div class="formula">
           <span class="formula-label">変換式:</span>
-          <code class="formula-code">bₙ = gₙ, bᵢ = bᵢ₊₁ ⊕ gᵢ</code>
+          <code class="formula-code">bₙ₋₁ = gₙ₋₁, bᵢ = bᵢ₊₁ ⊕ gᵢ</code>
           <span class="tooltip-trigger">?
             <div class="tooltip">
               <strong>記号の意味</strong><br>
               <strong>⊕</strong>: XOR（排他的論理和）<br>
-              <strong>bₙ</strong>: バイナリの最上位ビット<br>
-              <strong>gₙ</strong>: グレイの最上位ビット<br>
+              <strong>bₙ₋₁</strong>: バイナリの最上位ビット<br>
+              <strong>gₙ₋₁</strong>: グレイの最上位ビット<br>
               <strong>bᵢ</strong>: バイナリのi番目のビット<br>
               <strong>gᵢ</strong>: グレイのi番目のビット<br>
               <strong>i</strong>: ビット位置（n-1から0まで）
@@ -420,6 +420,7 @@
   </div>
 </footer>
 
+<script src="js/gray-core.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

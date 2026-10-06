@@ -1151,3 +1151,7 @@ footer .footer{
     font-size:14px;
   }
 }
+/* 変換のエラー表示 */
+.convBox .out code.error{
+  color:var(--error);
+}

@@ -53,22 +53,14 @@ const hdist = (a, b) => {
  * @param {number} b - バイナリ値
  * @returns {number} グレイコード値
  */
-const binToGray = (b) => (b ^ (b >>> 1));
+const binToGray = (b) => GrayCore.toGray(b);
 
 /**
- * グレイコードからバイナリに変換
- * 累積XOR演算による変換
+ * グレイコードからバイナリに変換（計算部 js/gray-core.js）
  * @param {number} g - グレイコード値
  * @returns {number} バイナリ値
  */
-const grayToBin = (g) => {
-  let b = 0;
-  // MSBから順次XOR演算
-  for (; g; g >>= 1) {
-    b ^= g;
-  }
-  return b;
-};
+const grayToBin = (g) => GrayCore.fromGray(g);
 
 // ==========================================
 // タブナビゲーション
@@ -616,29 +608,20 @@ $('spinSpeed').addEventListener('input', e => {
 // ==========================================
 
 /**
- * バイナリ/グレイコード相互変換（セキュリティ強化版）
- * @param {string} input - 入力文字列（0と1のみ有効）
+ * バイナリ/グレイコード相互変換（ビット列の文字列のまま。js/gray-core.js）
+ * @param {string} input - 入力文字列
  * @param {boolean} toGray - true=グレイ変換, false=バイナリ変換
- * @returns {string} 変換結果
+ * @returns {{ok: boolean, text: string, bits?: string}} 結果
  */
 function convert(input, toGray) {
-  // 入力検証とサニタイゼーション
-  if (typeof input !== 'string') return '—';
-
-  const s = input.replace(/[^01]/g, ''); // 0と1以外を除去
-  if (!s) return '—'; // 空文字の場合
-  if (s.length > 32) return '—'; // 長すぎる入力を拒否（DoS対策）
-
-  try {
-    const num = parseInt(s, 2); // 2進数として解釈
-    if (isNaN(num) || num < 0) return '—'; // 不正な値をチェック
-
-    const result = toGray ? binToGray(num) : grayToBin(num);
-    return pad(result, s.length); // 元の桁数を保持
-  } catch (error) {
-    console.error('Conversion error:', error);
-    return '—'; // エラー時の安全な戻り値
+  const r = GrayCore.normalizeBits(input);
+  if (!r.ok) {
+    if (r.error === 'empty') return { ok: false, text: '0と1を入力してください。' };
+    if (r.error === 'tooLong') return { ok: false, text: `${GrayCore.MAX_BITS}桁までにしてください（${r.length}桁あります）。` };
+    return { ok: false, text: `0と1以外の文字「${r.char}」が${r.index}文字目にあります。` };
   }
+  const text = toGray ? GrayCore.binToGrayBits(r.bits) : GrayCore.grayToBinBits(r.bits);
+  return { ok: true, text, bits: r.bits };
 }
 
 // ==========================================
@@ -646,99 +629,32 @@ function convert(input, toGray) {
 // ==========================================
 
 /**
- * Binary → Gray変換の計算過程を生成
+ * 計算過程を生成（計算部の steps から文言を組み立てる）
  */
-function generateBinaryToGraySteps(input) {
-  const steps = [];
-  const bits = input.split('').map(b => parseInt(b));
-  const n = bits.length;
-
-  // ステップ0: 入力表示
-  steps.push({
-    header: `入力: バイナリ ${input}`,
-    calculation: `ビット列: ${bits.map((b, i) => `b${n-1-i}=${b}`).join(', ')}`,
+function generateSteps(input, toGray) {
+  const { result, steps } = GrayCore.steps(input, toGray);
+  const n = input.length;
+  const src = toGray ? 'b' : 'g';
+  const dst = toGray ? 'g' : 'b';
+  const list = [{
+    header: `入力: ${toGray ? 'バイナリ' : 'グレイ'} ${input}`,
+    calculation: `ビット列: ${input.split('').map((c, i) => `${src}${n - 1 - i}=${c}`).join(', ')}`,
     result: ''
-  });
-
-  // 各ビットの計算
-  const result = [];
-  for (let i = 0; i < n; i++) {
-    if (i === 0) {
-      // 最上位ビット
-      result.push(bits[0]);
-      steps.push({
-        header: `ステップ${i+1}: 最上位ビット`,
-        calculation: `g${n-1} = b${n-1} = ${bits[0]}`,
-        result: `g${n-1} = ${bits[0]}`
-      });
-    } else {
-      // 他のビット
-      const xor = bits[i-1] ^ bits[i];
-      result.push(xor);
-      steps.push({
-        header: `ステップ${i+1}: ビット${n-1-i}`,
-        calculation: `g${n-1-i} = b${n-i} ⊕ b${n-1-i} = ${bits[i-1]} ⊕ ${bits[i]} = ${xor}`,
-        result: `g${n-1-i} = ${xor}`
-      });
-    }
+  }];
+  if (n > GrayCore.MAX_STEP_BITS) {
+    list.push({ header: '計算過程', calculation: `${GrayCore.MAX_STEP_BITS}桁を超えるので省略します。`, result: '' });
+  } else {
+    steps.forEach((st, i) => {
+      if (st.kind === 'msb') {
+        list.push({ header: `ステップ${i + 1}: 最上位ビット`, calculation: `${dst}${st.j} = ${src}${st.j} = ${st.value}`, result: `${dst}${st.j} = ${st.value}` });
+      } else {
+        const right = toGray ? `b${st.j}` : `g${st.j}`;
+        list.push({ header: `ステップ${i + 1}: ビット${st.j}`, calculation: `${dst}${st.j} = b${st.j + 1} ⊕ ${right} = ${st.left} ⊕ ${st.right} = ${st.out}`, result: `${dst}${st.j} = ${st.out}` });
+      }
+    });
   }
-
-  // 最終結果
-  steps.push({
-    header: '最終結果',
-    calculation: `グレイコード: ${result.join('')}`,
-    result: `変換完了: ${input} → ${result.join('')}`
-  });
-
-  return steps;
-}
-
-/**
- * Gray → Binary変換の計算過程を生成
- */
-function generateGrayToBinarySteps(input) {
-  const steps = [];
-  const bits = input.split('').map(b => parseInt(b));
-  const n = bits.length;
-
-  // ステップ0: 入力表示
-  steps.push({
-    header: `入力: グレイ ${input}`,
-    calculation: `ビット列: ${bits.map((b, i) => `g${n-1-i}=${b}`).join(', ')}`,
-    result: ''
-  });
-
-  // 各ビットの計算
-  const result = [];
-  for (let i = 0; i < n; i++) {
-    if (i === 0) {
-      // 最上位ビット
-      result.push(bits[0]);
-      steps.push({
-        header: `ステップ${i+1}: 最上位ビット`,
-        calculation: `b${n-1} = g${n-1} = ${bits[0]}`,
-        result: `b${n-1} = ${bits[0]}`
-      });
-    } else {
-      // 他のビット
-      const xor = result[i-1] ^ bits[i];
-      result.push(xor);
-      steps.push({
-        header: `ステップ${i+1}: ビット${n-1-i}`,
-        calculation: `b${n-1-i} = b${n-i} ⊕ g${n-1-i} = ${result[i-1]} ⊕ ${bits[i]} = ${xor}`,
-        result: `b${n-1-i} = ${xor}`
-      });
-    }
-  }
-
-  // 最終結果
-  steps.push({
-    header: '最終結果',
-    calculation: `バイナリコード: ${result.join('')}`,
-    result: `変換完了: ${input} → ${result.join('')}`
-  });
-
-  return steps;
+  list.push({ header: '最終結果', calculation: `${toGray ? 'グレイコード' : 'バイナリコード'}: ${result}`, result: `変換完了: ${input} → ${result}` });
+  return list;
 }
 
 /**
@@ -775,36 +691,26 @@ function displaySteps(steps, containerId) {
   });
 }
 
-// Binary → Gray変換
-$('toGray').addEventListener('click', () => {
-  const input = $('binIn').value;
-  const result = convert(input, true);
-  $('grayOut2').textContent = result;
+// 変換の実行（不正な入力は結果欄にエラーを出し、計算過程も消す）
+function runConvert(toGray) {
+  const r = convert($(toGray ? 'binIn' : 'grayIn').value, toGray);
+  const out = $(toGray ? 'grayOut2' : 'binOut2');
+  const stepsId = toGray ? 'binaryToGraySteps' : 'grayToBinarySteps';
+  out.textContent = r.text;
+  out.classList.toggle('error', !r.ok);
+  if (r.ok) displaySteps(generateSteps(r.bits, toGray), stepsId);
+  else $(stepsId).replaceChildren();
+}
 
-  if (/^[01]+$/.test(input)) {
-    const steps = generateBinaryToGraySteps(input);
-    displaySteps(steps, 'binaryToGraySteps');
-  }
-});
-
-// Gray → Binary変換
-$('toBin').addEventListener('click', () => {
-  const input = $('grayIn').value;
-  const result = convert(input, false);
-  $('binOut2').textContent = result;
-
-  if (/^[01]+$/.test(input)) {
-    const steps = generateGrayToBinarySteps(input);
-    displaySteps(steps, 'grayToBinarySteps');
-  }
-});
+$('toGray').addEventListener('click', () => runConvert(true));
+$('toBin').addEventListener('click', () => runConvert(false));
 
 // Enterキーでの変換実行
-$('binIn').addEventListener('keypress', e => {
+$('binIn').addEventListener('keydown', e => {
   if (e.key === 'Enter') $('toGray').click();
 });
 
-$('grayIn').addEventListener('keypress', e => {
+$('grayIn').addEventListener('keydown', e => {
   if (e.key === 'Enter') $('toBin').click();
 });
 
@@ -866,17 +772,8 @@ document.addEventListener('DOMContentLoaded', () => {
  * デフォルト値を使用して計算過程を表示
  */
 function initializeConversionExamples() {
-  // デフォルト値での Binary → Gray 変換例
-  const defaultBinary = "1010";
-  const binaryToGraySteps = generateBinaryToGraySteps(defaultBinary);
-  displaySteps(binaryToGraySteps, 'binaryToGraySteps');
-  $('grayOut2').textContent = convert(defaultBinary, true);
-
-  // デフォルト値での Gray → Binary 変換例
-  const defaultGray = "1111";
-  const grayToBinarySteps = generateGrayToBinarySteps(defaultGray);
-  displaySteps(grayToBinarySteps, 'grayToBinarySteps');
-  $('binOut2').textContent = convert(defaultGray, false);
+  runConvert(true);
+  runConvert(false);
 }
 
 /**
