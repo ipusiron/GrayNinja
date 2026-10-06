@@ -14,6 +14,7 @@
   <h1>GrayNinja</h1>
   <p class="subtitle" data-i18n="ui.subtitle"></p>
   <div class="header-buttons">
+    <button id="langToggle" type="button" data-i18n="ui.langButton" data-i18n-attr="aria-label:ui.langLabel;title:ui.langLabel"></button>
     <button id="themeToggle" type="button" class="icon-btn"></button>
   </div>
 </header>
@@ -91,13 +92,13 @@
           <div class="card"><div class="k" data-i18n="card.dec"></div><div class="v mono" id="decOut"></div></div>
           <div class="card"><div class="k" data-i18n="card.bin"></div><div class="v mono" id="binOut"></div></div>
           <div class="card"><div class="k" data-i18n="card.gray"></div><div class="v mono" id="grayOut"></div></div>
-          <div class="card card-wide">
-            <div class="k"><span data-i18n="card.next"></span>
-              <button type="button" class="info" aria-expanded="false" aria-controls="tipNext" data-i18n-attr="aria-label:ui.info">?</button>
-            </div>
-            <div class="v" id="hdOut"></div>
-            <p id="tipNext" class="tip" hidden data-i18n="card.nextTip"></p>
+        </div>
+        <div class="card card-next">
+          <div class="k"><span data-i18n="card.next"></span>
+            <button type="button" class="info" aria-expanded="false" aria-controls="tipNext" data-i18n-attr="aria-label:ui.info">?</button>
           </div>
+          <div class="v" id="hdOut"></div>
+          <p id="tipNext" class="tip" hidden data-i18n="card.nextTip"></p>
         </div>
         <div class="tableWrap" id="tableWrap" tabindex="0" role="region" data-i18n-attr="aria-label:tbl.wrap">
           <table id="seqTbl" class="mono">

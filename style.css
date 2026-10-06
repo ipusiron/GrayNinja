@@ -481,8 +481,8 @@ details.acc > summary h2,details.acc > summary h3{
   min-width:0;
 }
 
-.card-wide{
-  grid-column:1 / -1;
+.card-next{
+  margin-top:10px;
 }
 
 .card .k{

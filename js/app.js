@@ -634,6 +634,7 @@
     GrayTheme.refresh(theme);
     theme.addEventListener('click', () => GrayTheme.toggle(theme));
     GrayTheme.watchSystem(theme);
+    $('langToggle').addEventListener('click', () => I.set(I.lang === 'ja' ? 'en' : 'ja'));
     GrayTheme.onChange(() => {
       disc.cache = {};
       if (activeTab === 'disc') drawDiscs();
