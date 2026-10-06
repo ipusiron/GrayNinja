@@ -10,7 +10,7 @@ English · [日本語](README.md)
 
 # GrayNinja - Gray Code Encoder Disc Visualization Tool
 
-**GrayNinja** is a tool for learning the Gray code (reflected binary code) through four screens: a comparison table, encoder discs, step-by-step conversion, and source-backed notes.
+**GrayNinja** is a tool for learning the Gray code (reflected binary code) through five screens: a comparison table, encoder discs, step-by-step conversion, a security comparison, and source-backed notes.
 
 The Gray code is a binary code ordered so that adjacent values always differ in exactly one bit. Two discs (Gray and binary) rotate to the same angle, so you can compare how many rings change at once when a sector boundary is crossed. A misread simulator offsets the sensors of the read head and shows in numbers how far off the binary disc can read.
 
@@ -35,6 +35,9 @@ Try it directly in your browser.
 >![Convert tab (dark mode)](assets/en/screenshot-dark.png)
 >*Dark mode: converting a 32-digit binary number to Gray code with the steps shown*
 
+>![Security tab](assets/en/screenshot-security.png)
+>*Comparing what leaks from binary and Gray counters under power-analysis models*
+
 >![Learn tab](assets/en/screenshot-learn.png)
 >*The Learn tab: history and real uses, each with a source*
 
@@ -42,11 +45,12 @@ Try it directly in your browser.
 
 ## ✨ Features
 
-- Four tabs (Basics, Disc, Convert, Learn) walk through the properties and uses of the Gray code.
+- Five tabs (Basics, Disc, Convert, Security, Learn) walk through the properties and uses of the Gray code.
 - The comparison table supports 1 to 12 bits and highlights the changed bits in both binary and Gray.
 - Two encoder discs rotate to the same angle, so the sector under the read line can be read in Gray and in binary side by side.
 - The misread simulator offsets the sensor of each ring and compares, for Gray and binary, how often a value farther than a neighbor is read over one turn and how large the error gets.
 - Conversion accepts up to 1,024 digits and shows digit-by-digit steps for up to 64 digits.
+- The Security tab compares counters under three leakage models of power analysis, and computes the flips needed to brute-force switches and the bits sent with a De Bruijn sequence.
 - The Learn tab is based on patents, papers, standards, and manufacturer materials, and every card links to its source.
 - Japanese/English and light/dark theme switching (your choices are saved automatically).
 
@@ -77,6 +81,11 @@ The outer ring is the most significant bit and the inner ring the least signific
 2. Check the result, the value it represents (decimal), and the digit-by-digit steps.
 
 Spaces and "_" are ignored as separators, and a leading `0b` and full-width 0/1 are accepted. Any other character is reported with its position, and the previous result is cleared.
+
+### Security
+
+1. In "Comparing counters under power-analysis models", choose the number of bits (2 to 10) and a leakage model (number of flipped bits, number of 1s in the value, positions of the flipped bits), and compare how many candidates for i remain after one observation, for binary and Gray.
+2. In "Order for brute-forcing switches", choose the number of switches (1 to 16) and the order (binary or Gray), then step through the combinations with "Next" to see which switches flip and the running total. The bits needed with a De Bruijn sequence are shown below.
 
 ### Learn
 
@@ -149,6 +158,18 @@ On a 4-bit disc, with the sensors offset alternately by 10% of a sector width (�
 
 Just before the 7/8 boundary the binary disc reads 13 (`1101`). The Gray disc only reads the neighboring value slightly early near a boundary. The Gray code stays within a neighboring value only while every sensor is offset by less than half a sector; with a 60% offset even the Gray disc reads values two sectors away at 7.62% of the angles.
 
+### Comparing under power-analysis models
+
+For an 8-bit counter stepped once, the average number of candidates for i that remain after one observation (i uniform over 0 to 255) is as follows under three leakage models.
+
+| Leakage model | Binary | Gray |
+|---|---|---|
+| Number of flipped bits (Hamming distance) | 85.34 | 256.00 |
+| Number of 1s in the value (Hamming weight) | 50.27 | 50.27 |
+| Positions of the flipped bits | 85.34 | 85.34 |
+
+Under the Hamming-distance model nothing can be narrowed down from the Gray counter. But if bits leak differently so that the flipped bit can be identified, the Gray counter leaks as much as the binary counter does under the Hamming-distance model. The Gray code is not a side-channel countermeasure.
+
 ### What the Gray code cannot do
 
 - It cannot detect or correct errors. All 2^n patterns of n bits are used, so flipping one bit yields another valid codeword.
@@ -164,7 +185,7 @@ Just before the 7/8 boundary the binary disc reads 13 (`1101`). The Gray disc on
 - Support learning about asynchronous FIFOs in FPGAs or the ordering of Karnaugh maps (00, 01, 11, 10).
 - Before studying Gray mapping in digital modulation (QAM, PSK), check by hand that neighbors differ in one bit.
 - Follow the positions of flipped bits (0, 1, 0, 2, 0, 1, 0, 3, …) in the table and relate them to puzzles such as the Chinese rings and the Tower of Hanoi.
-- Use it as an entry point in security lectures to explain the Hamming-distance model of power analysis, or the order for brute-forcing switches (4,095 flips for 12 switches in Gray order versus 8,178 in binary order).
+- Use it as an entry point in security lectures to explain the Hamming-distance model of power analysis, or the order for brute-forcing switches (4,095 flips for 12 switches in Gray order versus 8,178 in binary order). For a fixed radio code it also computes that sending 12-bit codes one by one takes 49,152 bits, while a De Bruijn sequence tries every code in 4,107 bits.
 - Practice bit operations and XOR in programming by checking results against the steps.
 
 ---
@@ -234,14 +255,16 @@ GrayNinja/
 │   │   ├── screenshot-basics.png # English screenshot of the Basics tab
 │   │   ├── screenshot-dark.png   # English screenshot of the Convert tab in dark mode
 │   │   ├── screenshot-learn.png  # English screenshot of the Learn tab
+│   │   ├── screenshot-security.png # English screenshot of the Security tab
 │   │   └── screenshot.png        # English screenshot of the Disc tab
 │   ├── favicon.svg               # Favicon
 │   ├── screenshot-basics.png     # Screenshot of the Basics tab
 │   ├── screenshot-dark.png       # Screenshot of the Convert tab in dark mode
 │   ├── screenshot-learn.png      # Screenshot of the Learn tab
+│   ├── screenshot-security.png   # Screenshot of the Security tab
 │   └── screenshot.png            # Screenshot of the Disc tab
 ├── js/
-│   ├── app.js                    # Screen logic (tabs, table, discs, conversion, notes)
+│   ├── app.js                    # Screen logic (tabs, table, discs, conversion, security, notes)
 │   ├── gray-core.js              # Core (conversion, input normalization, steps, disc readings)
 │   ├── i18n.js                   # Language selection and static text replacement
 │   ├── messages.js               # Japanese and English message dictionary

@@ -290,3 +290,82 @@ test('グレイは半セクター未満のずれなら隣より遠い値を読�
   assert.ok(worst.length > 0 && worst.length <= 5);
   for (let i = 1; i < worst.length; i++) assert.ok(worst[i - 1].err >= worst[i].err);
 });
+
+// ── 電力解析のモデル・スイッチの総当たり・De Bruijn 列 ──
+test('カウンターの漏えい: グレイの反転数は常に1、2進は末尾の1の個数＋1。グレイの反転位置は2進の反転数−1と同じ', () => {
+  for (let n = 2; n <= 10; n++) {
+    const bin = G.counterLeak(n, 'binary');
+    const gray = G.counterLeak(n, 'gray');
+    assert.equal(bin.length, 2 ** n);
+    for (let i = 0; i < 2 ** n; i++) {
+      assert.equal(gray[i].hd, 1);
+      assert.equal(bin[i].pos.split(',').length, bin[i].hd);
+      assert.equal(gray[i].pos, String(bin[i].hd - 1), `n=${n} i=${i}`);
+      assert.equal(gray[i].top, bin[i].top);
+      if (i < 2 ** n - 1) {
+        let t = 0;
+        for (let x = i; x & 1; x >>= 1) t++;
+        assert.equal(bin[i].hd, t + 1);
+      }
+    }
+    assert.equal(bin[2 ** n - 1].hd, n); // 最後の値から0へは全ビットが変わる
+  }
+});
+
+test('観測したあとに残る候補の平均: 式で出した値と一致する', () => {
+  const C = (n, k) => {
+    let r = 1;
+    for (let j = 1; j <= k; j++) r = (r * (n - k + j)) / j;
+    return r;
+  };
+  for (let n = 2; n <= 10; n++) {
+    const N = 2 ** n;
+    let sq = 4; // 反転数 n は2通り（0111…1 と 111…1）
+    for (let k = 1; k < n; k++) sq += 4 ** (n - k);
+    const hdBin = sq / N;
+    const bin = G.counterLeak(n, 'binary');
+    const gray = G.counterLeak(n, 'gray');
+    assert.ok(Math.abs(G.leakSummary(bin, 'hd').avgCandidates - hdBin) < 1e-9);
+    assert.equal(G.leakSummary(gray, 'hd').avgCandidates, N);
+    assert.equal(G.leakSummary(gray, 'hd').distinct, 1);
+    assert.ok(Math.abs(G.leakSummary(gray, 'pos').avgCandidates - hdBin) < 1e-9);
+    assert.ok(Math.abs(G.leakSummary(bin, 'pos').avgCandidates - hdBin) < 1e-9);
+    const hw = C(2 * n, n) / N; // Σ C(n,w)² = C(2n,n)
+    assert.ok(Math.abs(G.leakSummary(bin, 'hw').avgCandidates - hw) < 1e-9);
+    assert.ok(Math.abs(G.leakSummary(gray, 'hw').avgCandidates - hw) < 1e-9);
+    assert.equal(G.leakSummary(gray, 'hw').distinct, n + 1);
+  }
+  assert.equal(G.leakSummary(G.counterLeak(8, 'binary'), 'hd').avgCandidates.toFixed(2), '85.34');
+  assert.equal(G.leakSummary(G.counterLeak(8, 'gray'), 'hw').avgCandidates.toFixed(2), '50.27');
+});
+
+test('スイッチの総当たり: 累計の切り替え回数（2k−popcount(k) と k）を1つずつ数えた値と比べる', () => {
+  for (const kind of ['binary', 'gray']) {
+    let sum = 0;
+    for (let k = 1; k < 2 ** 10; k++) {
+      sum += G.hamming(G.codeOf(k - 1, kind), G.codeOf(k, kind));
+      assert.equal(G.flipsUpTo(k, kind), sum, `${kind} ${k}`);
+    }
+  }
+  assert.equal(G.bruteFlips(12, 'binary'), 8178);
+  assert.equal(G.bruteFlips(12, 'gray'), 4095);
+  assert.equal(G.bruteFlips(16, 'binary'), 2 ** 17 - 16 - 2);
+  assert.equal(G.bruteFlips(1, 'binary'), 1);
+  assert.equal(G.bruteFlips(1, 'gray'), 1);
+});
+
+test('De Bruijn 列: 長さ 2^n の巡回列で、長さ n の窓に全パターンが1回ずつ現れる', () => {
+  assert.equal(G.deBruijn(1), '01');
+  assert.equal(G.deBruijn(3), '00010111');
+  assert.equal(G.deBruijn(4), '0000100110101111');
+  for (let n = 1; n <= 12; n++) {
+    const s = G.deBruijn(n);
+    assert.equal(s.length, 2 ** n);
+    const lin = s + s.slice(0, n - 1);
+    const seen = new Set();
+    for (let i = 0; i < s.length; i++) seen.add(lin.slice(i, i + n));
+    assert.equal(seen.size, 2 ** n, `n=${n}`);
+  }
+  assert.equal(2 ** 12 + 12 - 1, 4107);
+  assert.equal(12 * 2 ** 12, 49152);
+});

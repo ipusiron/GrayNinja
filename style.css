@@ -720,6 +720,90 @@ mark.flip{
 }
 
 /* ==========================================
+   セキュリティ
+   ========================================== */
+#leakChart{
+  display:block;
+  width:100%;
+  height:220px;
+  margin-top:12px;
+}
+
+.source{
+  margin:10px 0 0;
+  color:var(--muted);
+  font-size:13px;
+  overflow-wrap:anywhere;
+}
+
+tbody tr.current{
+  background:var(--row-active-bg);
+  color:var(--row-active-fg);
+}
+
+.dip-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin:14px 0 6px;
+}
+
+.dip{
+  position:relative;
+  display:inline-block;
+  width:26px;
+  height:52px;
+  padding-bottom:18px;
+  background:var(--chip);
+  border:1px solid var(--control-border);
+  border-radius:5px;
+}
+
+/* つまみ（オフは下、オンは上） */
+.dip::before{
+  content:"";
+  position:absolute;
+  left:4px;
+  right:4px;
+  bottom:22px;
+  height:12px;
+  background:var(--disc-1);
+  border-radius:3px;
+}
+
+.dip.on::before{
+  bottom:auto;
+  top:4px;
+  background:var(--accent);
+}
+
+.dip.flip{
+  outline:3px solid var(--disc-highlight);
+  outline-offset:1px;
+}
+
+.dip-label{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:1px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:16px;
+  text-align:center;
+}
+
+.dip-status{
+  margin:8px 0 0;
+  font-weight:600;
+}
+
+.db-seq{
+  overflow-wrap:anywhere;
+  font-size:14px;
+}
+
+/* ==========================================
    変換
    ========================================== */
 .convBox label{

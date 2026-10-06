@@ -76,7 +76,7 @@ test('冒頭の形（言語の切り替え・H1・バッジ5種・Dayの行）�
 test('画像: README から参照する画像はすべて実在し300KB以下。assets の PNG は README から参照されているものだけ', () => {
   for (const d of Object.values(DOCS)) {
     const refs = [...d.text.matchAll(/!\[[^\]]*\]\((assets\/[^)]+)\)/g)].map((m) => m[1]);
-    assert.equal(refs.length, 4, d.file);
+    assert.equal(refs.length, 5, d.file);
     for (const r of refs) {
       assert.match(r, d.shots, r);
       assert.ok(fs.statSync(path.join(ROOT, r)).size <= 300 * 1024, r);
@@ -210,4 +210,16 @@ test('README の「センサーがずれたとき」の表と数値が計算部�
   const g60 = G.sweep(4, 'gray', G.sensorOffsets(4, 'alternate', 0.6));
   assert.equal(p(g60.far, g60.total), '7.62%');
   assert.equal(g60.maxErr, 2);
+});
+
+test('README の「電力解析のモデルで比べたとき」の表が計算部の集計と一致する（日英）', () => {
+  const f = (x) => x.toFixed(2);
+  const want = ['hd', 'hw', 'pos'].map((m) => ['binary', 'gray'].map((k) => f(G.leakSummary(G.counterLeak(8, k), m).avgCandidates)));
+  for (const d of Object.values(DOCS)) {
+    const rows = [...d.text.matchAll(/^\| [^|]+ \| ([\d.]+)(?:通り)? \| ([\d.]+)(?:通り)? \|$/gm)].map((m) => [m[1], m[2]]);
+    assert.deepEqual(rows, want, d.file);
+    assert.ok(d.text.includes('49,152') && d.text.includes('4,107'), d.file);
+  }
+  assert.equal(12 * 2 ** 12, 49152);
+  assert.equal(G.deBruijn(12).length + 12 - 1, 4107);
 });

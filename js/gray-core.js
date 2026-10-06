@@ -229,7 +229,65 @@
     return res;
   }
 
+  // ── 電力解析のモデル（カウンター）──
+  // カウンターを i → i+1（最後の値の次は0）と1つ進めるときに観測できる量を、3つの漏えいモデルで並べる
+  //   hd:  反転したビットの数（ハミング距離。Brier, Clavier, Olivier, CHES 2004 のモデル）
+  //   hw:  進めたあとの値の1の個数（ハミング重み）
+  //   pos: 反転したビットの位置の集合（ビットごとに漏れ方が違うとき。最下位が0、カンマ区切りの文字列）
+  const LEAK_MODELS = ['hd', 'hw', 'pos'];
+  function counterLeak(n, kind) {
+    const N = clampN(n);
+    const size = 1 << N;
+    const mask = size - 1;
+    const rows = [];
+    for (let i = 0; i < size; i++) {
+      const a = codeOf(i, kind);
+      const b = codeOf((i + 1) & mask, kind);
+      const pos = diffBits(a, b);
+      rows.push({ i, hd: hamming(a, b), hw: popcount(b), pos: pos.join(','), top: Math.max(...pos) + 1 });
+    }
+    return rows;
+  }
+
+  // 観測値ごとの件数と、観測したあとに残る i の候補の数の平均（i は一様に分布すると仮定。Σ件数² ÷ 総数）
+  function leakSummary(rows, model) {
+    const count = new Map();
+    for (const r of rows) count.set(r[model], (count.get(r[model]) || 0) + 1);
+    let sq = 0;
+    for (const c of count.values()) sq += c * c;
+    const counts = [...count.entries()].sort((x, y) => y[1] - x[1] || String(x[0]).localeCompare(String(y[0]), 'en', { numeric: true }));
+    return { distinct: count.size, avgCandidates: sq / rows.length, counts };
+  }
+
+  // ── スイッチの総当たり ──
+  // 全 2^n 通りを0から順に試すとき、0から k 番目までに切り替える回数の累計（2進は 2k − popcount(k)、グレイは k）
+  const flipsUpTo = (k, kind) => (kind === 'gray' ? k : 2 * k - popcount(k));
+  // 全通りを試し終えるまでの切り替え回数（グレイ 2^n−1、2進 2^(n+1)−n−2）
+  const bruteFlips = (n, kind) => flipsUpTo(2 ** n - 1, kind);
+
+  // de Bruijn 列 B(2, n)（FKM アルゴリズム）。長さ 2^n の巡回列で、長さ n の窓に n ビットの全パターンが1回ずつ現れる
+  function deBruijn(n) {
+    const N = Math.max(1, Math.min(16, Math.trunc(n)));
+    const a = new Array(N + 1).fill(0);
+    const out = [];
+    const db = (t, p) => {
+      if (t > N) {
+        if (N % p === 0) for (let j = 1; j <= p; j++) out.push(a[j]);
+      } else {
+        a[t] = a[t - p];
+        db(t + 1, p);
+        for (let j = a[t - p] + 1; j < 2; j++) {
+          a[t] = j;
+          db(t + 1, t);
+        }
+      }
+    };
+    db(1, 1);
+    return out.join('');
+  }
+
   globalThis.GrayCore = {
+    LEAK_MODELS, counterLeak, leakSummary, flipsUpTo, bruteFlips, deBruijn,
     OFFSET_PATTERNS, seeded, sensorOffsets, ringDistance, sweep,
     MAX_BITS, MAX_STEP_BITS, MIN_N, MAX_N,
     toGray, fromGray, pad, popcount, hamming, clampN,

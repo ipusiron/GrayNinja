@@ -25,6 +25,7 @@
   <button type="button" class="tab" role="tab" id="tab-basics" data-tab="basics" aria-controls="panel-basics" aria-selected="true" data-i18n="tab.basics"></button>
   <button type="button" class="tab" role="tab" id="tab-disc" data-tab="disc" aria-controls="panel-disc" aria-selected="false" tabindex="-1" data-i18n="tab.disc"></button>
   <button type="button" class="tab" role="tab" id="tab-convert" data-tab="convert" aria-controls="panel-convert" aria-selected="false" tabindex="-1" data-i18n="tab.convert"></button>
+  <button type="button" class="tab" role="tab" id="tab-security" data-tab="security" aria-controls="panel-security" aria-selected="false" tabindex="-1" data-i18n="tab.security"></button>
   <button type="button" class="tab" role="tab" id="tab-learn" data-tab="learn" aria-controls="panel-learn" aria-selected="false" tabindex="-1" data-i18n="tab.learn"></button>
 </nav>
 
@@ -266,6 +267,85 @@
           <summary><h3 data-i18n="conv.process"></h3></summary>
           <div id="grayToBinarySteps" class="process-steps"></div>
         </details>
+      </section>
+    </div>
+  </section>
+
+  <!-- セキュリティ -->
+  <section id="panel-security" class="panel" role="tabpanel" aria-labelledby="tab-security" hidden>
+    <div class="panel-single">
+      <h2 class="learn-title" data-i18n="sec.title"></h2>
+      <p data-i18n="sec.lead"></p>
+
+      <section class="box">
+        <h2 class="box-title" data-i18n="leak.title"></h2>
+        <p data-i18n="leak.intro"></p>
+        <div class="control-row">
+          <label for="leakBits" data-i18n="leak.bits"></label>
+          <input id="leakBits" type="number" min="2" max="10" value="8" inputmode="numeric">
+        </div>
+        <div class="control-row">
+          <label for="leakModel" data-i18n="leak.model"></label>
+          <select id="leakModel">
+            <option value="hd" data-i18n="leak.model.hd"></option>
+            <option value="hw" data-i18n="leak.model.hw"></option>
+            <option value="pos" data-i18n="leak.model.pos"></option>
+          </select>
+        </div>
+        <p class="hint" id="leakModelHint"></p>
+        <canvas id="leakChart" role="img"></canvas>
+        <p class="legend">
+          <span class="swatch swatch-line swatch-bin" aria-hidden="true"></span><span data-i18n="leak.legendBin"></span>
+          <span class="swatch swatch-line swatch-gray" aria-hidden="true"></span><span data-i18n="leak.legendGray"></span>
+        </p>
+        <div class="tableWrap sweep-table">
+          <table id="leakTbl">
+            <caption class="sr-only" data-i18n="leak.caption"></caption>
+            <thead>
+              <tr><th scope="col" data-i18n="leak.thCounter"></th><th scope="col" data-i18n="leak.thDistinct"></th><th scope="col" data-i18n="leak.thCandidates"></th><th scope="col" data-i18n="leak.thExamples"></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="hint" id="leakFinding"></p>
+        <p class="note" data-i18n="leak.limits"></p>
+        <p class="source" data-i18n="leak.source"></p>
+      </section>
+
+      <section class="box">
+        <h2 class="box-title" data-i18n="dip.title"></h2>
+        <p data-i18n="dip.intro"></p>
+        <div class="control-row">
+          <label for="dipBits" data-i18n="dip.bits"></label>
+          <input id="dipBits" type="number" min="1" max="16" value="4" inputmode="numeric">
+        </div>
+        <div class="control-row">
+          <label for="dipOrder" data-i18n="dip.order"></label>
+          <select id="dipOrder">
+            <option value="binary" data-i18n="dip.order.binary"></option>
+            <option value="gray" data-i18n="dip.order.gray"></option>
+          </select>
+        </div>
+        <div class="dip-row" id="dipRow" aria-hidden="true"></div>
+        <p class="dip-status" id="dipStatus" aria-live="polite"></p>
+        <div class="control-row">
+          <button id="dipPrev" type="button" data-i18n="dip.prev"></button>
+          <button id="dipNext" type="button" class="primary" data-i18n="dip.next"></button>
+          <button id="dipReset" type="button" data-i18n="dip.reset"></button>
+        </div>
+        <div class="tableWrap sweep-table">
+          <table id="dipTbl">
+            <caption class="sr-only" data-i18n="dip.caption"></caption>
+            <thead>
+              <tr><th scope="col" data-i18n="dip.thOrder"></th><th scope="col" data-i18n="dip.thTotal"></th><th scope="col" data-i18n="dip.thPer"></th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <h3 class="sub-title" data-i18n="db.title"></h3>
+        <p id="dbText"></p>
+        <p class="mono db-seq" id="dbSeq"></p>
+        <p class="source" data-i18n="db.source"></p>
       </section>
     </div>
   </section>

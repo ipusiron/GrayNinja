@@ -41,7 +41,7 @@ test('新しいタブで開くリンクには rel="noopener noreferrer"', () => 
 
 test('タブとパネルが ARIA で結び付いている', () => {
   const tabs = [...html.matchAll(/<button[^>]*role="tab"[^>]*>/g)].map((m) => m[0]);
-  assert.equal(tabs.length, 4);
+  assert.equal(tabs.length, 5);
   for (const tab of tabs) {
     const id = tab.match(/id="([^"]+)"/)[1];
     const panel = tab.match(/aria-controls="([^"]+)"/)[1];
@@ -84,7 +84,7 @@ test('data-i18n・data-i18n-attr のキーがすべて辞書にある', () => {
 
 test('app.js が参照する要素の id が index.html にある', () => {
   const used = new Set([...app.matchAll(/\$\('([\w-]+)'\)/g)].map((m) => m[1]));
-  for (const tab of ['basics', 'disc', 'convert', 'learn']) used.add(`tab-${tab}`).add(`panel-${tab}`);
+  for (const tab of ['basics', 'disc', 'convert', 'security', 'learn']) used.add(`tab-${tab}`).add(`panel-${tab}`);
   for (const m of app.matchAll(/(?:input|out|value|steps|gray|binary): '([\w-]+)'/g)) used.add(m[1]);
   for (const m of app.matchAll(/^\s+(learn\w+): \[/gm)) used.add(m[1]);
   for (const id of used) assert.ok(ids.has(id), id);
