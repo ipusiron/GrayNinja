@@ -1,426 +1,256 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none';">
-  <title>GrayNinja</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>GrayNinja - グレイコードのエンコーダー・ディスク可視化ツール</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script src="js/theme-init.js"></script>
 </head>
 <body>
 <header class="site-header">
   <h1>GrayNinja</h1>
-  <p class="subtitle">グレイコード（Gray Code）のエンコーダー・ディスク可視化ツール</p>
-  <button id="themeToggle" class="theme-toggle" aria-label="テーマ切り替え">
-    <span class="theme-icon"></span>
-  </button>
+  <p class="subtitle" data-i18n="ui.subtitle"></p>
+  <div class="header-buttons">
+    <button id="themeToggle" type="button" class="icon-btn"></button>
+  </div>
 </header>
 
-<nav class="tabs" role="tablist" aria-label="Tabs">
-  <button class="tab active" data-tab="basics" role="tab" aria-selected="true">基本</button>
-  <button class="tab" data-tab="disc" role="tab" aria-selected="false">ディスク</button>
-  <button class="tab" data-tab="convert" role="tab" aria-selected="false">変換</button>
-  <button class="tab" data-tab="usecases" role="tab" aria-selected="false">座学</button>
+<noscript><p class="noscript">このページはJavaScriptで動きます。JavaScriptを有効にしてから開き直してください。 / This page needs JavaScript.</p></noscript>
+
+<nav class="tabs" role="tablist" data-i18n-attr="aria-label:ui.tablist">
+  <button type="button" class="tab" role="tab" id="tab-basics" data-tab="basics" aria-controls="panel-basics" aria-selected="true" data-i18n="tab.basics"></button>
+  <button type="button" class="tab" role="tab" id="tab-disc" data-tab="disc" aria-controls="panel-disc" aria-selected="false" tabindex="-1" data-i18n="tab.disc"></button>
+  <button type="button" class="tab" role="tab" id="tab-convert" data-tab="convert" aria-controls="panel-convert" aria-selected="false" tabindex="-1" data-i18n="tab.convert"></button>
+  <button type="button" class="tab" role="tab" id="tab-learn" data-tab="learn" aria-controls="panel-learn" aria-selected="false" tabindex="-1" data-i18n="tab.learn"></button>
 </nav>
 
 <main>
-  <!-- Basics -->
-  <section id="panel-basics" class="panel active" role="tabpanel">
+  <!-- 基本 -->
+  <section id="panel-basics" class="panel" role="tabpanel" aria-labelledby="tab-basics">
     <div class="panel-single">
-      <section class="viz">
-        <div class="accordion">
-          <div class="accordion-item">
-            <div class="accordion-header" data-target="gray-intro-content">
-              <h2>グレイコードとは</h2>
-              <span class="accordion-icon">▼</span>
-            </div>
-            <div class="accordion-content" id="gray-intro-content">
-              <div class="intro-list">
-                <div class="intro-card">
-                  <h3>1ビットずつ変化</h3>
-                  <p>連続する値で必ず1ビットのみが変化する特殊な符号化方式</p>
-                  <div class="example">
-                    <span class="label">2進法:</span> 0111 → 1000 (4ビット変化)<br>
-                    <span class="label">グレイ:</span> 0100 → 1100 (1ビット変化)
-                  </div>
-                </div>
-                <div class="intro-card">
-                  <h3>高い対称性</h3>
-                  <p>コード列が左右対称の美しい数学的構造を持つ</p>
-                  <div class="example">
-                    <span class="label">n=2:</span> 00, 01, 11, 10<br>
-                    <span class="label">n=3:</span> 000, 001, 011, 010, 110, 111, 101, 100<br>
-                    <span class="accent">中心線で対称</span>
-                  </div>
-                </div>
-                <div class="intro-card">
-                  <h3>実用性</h3>
-                  <p>センサー読み取り誤差の防止、通信エラー最小化に活用</p>
-                  <div class="example">
-                    <span class="label">応用:</span> エンコーダー、QAM通信<br>
-                    <span class="accent">ノイズ耐性向上</span><br>
-                    <span class="accent">→ 詳細は「座学」タブを参照</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <details class="acc">
+        <summary><h2 data-i18n="intro.title"></h2></summary>
+        <div class="acc-body">
+          <p data-i18n="intro.p1"></p>
+          <p class="example mono" data-i18n="intro.ex1"></p>
+          <p data-i18n="intro.p2"></p>
+          <p class="example mono" data-i18n="intro.ex2"></p>
+          <p data-i18n="intro.p3"></p>
+          <p data-i18n="intro.p4"></p>
+          <p class="note" data-i18n="intro.p5"></p>
+        </div>
+      </details>
 
-          <div class="accordion-item">
-            <div class="accordion-header" data-target="hamming-info-content">
-              <h2>ハミング距離とは</h2>
-              <span class="accordion-icon">▼</span>
+      <details class="acc">
+        <summary><h2 data-i18n="ham.title"></h2></summary>
+        <div class="acc-body">
+          <p data-i18n="ham.p1"></p>
+          <div class="example">
+            <p data-i18n="ham.example"></p>
+            <div class="bitgrid mono" aria-hidden="true">
+              <span>1</span><span>0</span><span>1</span><span>0</span>
+              <span>1</span><span class="diff">1</span><span class="diff">0</span><span>0</span>
             </div>
-            <div class="accordion-content" id="hamming-info-content">
-              <p class="hamming-desc">
-                <strong>ハミング距離</strong>は、2つの同じ長さの文字列で<strong>異なる位置の個数</strong>を表します。
-              </p>
-              <div class="hamming-example">
-                <div class="example-item">
-                  <span class="label">例:</span> 1010 と 1100 のハミング距離<br>
-                  <div class="hamming-visual">
-                    <div class="binary-comparison">
-                      <div class="binary-row">
-                        <span class="bit">1</span>
-                        <span class="bit">0</span>
-                        <span class="bit">1</span>
-                        <span class="bit">0</span>
-                      </div>
-                      <div class="binary-row">
-                        <span class="bit">1</span>
-                        <span class="bit">1</span>
-                        <span class="bit">0</span>
-                        <span class="bit">0</span>
-                      </div>
-                      <div class="diff-row">
-                        <span class="diff-marker"></span>
-                        <span class="diff-marker active">↑</span>
-                        <span class="diff-marker active">↑</span>
-                        <span class="diff-marker"></span>
-                      </div>
-                    </div>
-                    <div class="result-line">→ ハミング距離 = 2 (位置2と位置3が異なる)</div>
-                  </div>
-                </div>
-                <div class="example-item">
-                  <span class="label">グレイコード:</span> 隣接する値のハミング距離は<strong>常に1</strong><br>
-                  <div class="hamming-visual">
-                    <code class="binary-line">0 1 0 0 → 1 1 0 0</code>
-                    <div class="result-line">→ 位置1のみ変化（ハミング距離 = 1）</div>
-                  </div>
-                </div>
-              </div>
+            <p data-i18n="ham.result"></p>
+          </div>
+          <p data-i18n="ham.p2"></p>
+        </div>
+      </details>
+
+      <section class="box">
+        <h2 class="box-title" data-i18n="ctl.title"></h2>
+        <div class="control-row">
+          <label for="bits" data-i18n="ctl.bits"></label>
+          <input id="bits" type="number" min="1" max="12" value="4" inputmode="numeric">
+        </div>
+        <div class="control-row">
+          <label for="valNum" data-i18n="ctl.value"></label>
+          <input id="valNum" type="number" min="0" max="15" value="0" inputmode="numeric">
+          <input id="val" type="range" min="0" max="15" value="0" data-i18n-attr="aria-label:ctl.valueRange">
+        </div>
+        <div class="control-row">
+          <button id="prev" type="button" data-i18n="ctl.prev"></button>
+          <button id="next" type="button" data-i18n="ctl.next"></button>
+          <label class="check"><input id="auto" type="checkbox"> <span data-i18n="ctl.auto"></span></label>
+          <label class="check"><input id="wrap" type="checkbox" checked> <span data-i18n="ctl.wrap"></span></label>
+        </div>
+        <div class="control-row range-row">
+          <label for="speed" data-i18n="ctl.speed"></label>
+          <output id="speedValue" for="speed"></output>
+          <input id="speed" type="range" min="100" max="2000" step="100" value="600">
+        </div>
+        <p class="hint" data-i18n="ctl.keys"></p>
+      </section>
+
+      <section class="box">
+        <h2 class="box-title" data-i18n="now.title"></h2>
+        <div class="cards">
+          <div class="card"><div class="k" data-i18n="card.dec"></div><div class="v mono" id="decOut"></div></div>
+          <div class="card"><div class="k" data-i18n="card.bin"></div><div class="v mono" id="binOut"></div></div>
+          <div class="card"><div class="k" data-i18n="card.gray"></div><div class="v mono" id="grayOut"></div></div>
+          <div class="card card-wide">
+            <div class="k"><span data-i18n="card.next"></span>
+              <button type="button" class="info" aria-expanded="false" aria-controls="tipNext" data-i18n-attr="aria-label:ui.info">?</button>
             </div>
+            <div class="v" id="hdOut"></div>
+            <p id="tipNext" class="tip" hidden data-i18n="card.nextTip"></p>
           </div>
         </div>
-
-        <div class="comparison-controls">
-          <h3>比較表の操作</h3>
-
-          <div class="control-row">
-            <label>ビット数 n</label>
-            <input id="bits" type="number" min="1" max="12" value="4" />
-          </div>
-
-          <div class="control-row">
-            <label>速度</label>
-            <span id="speedValue">600ms</span>
-            <input id="speedSlider" type="range" min="100" max="2000" value="600" step="100">
-          </div>
-
-          <div class="control-row">
-            <label>現在値 i （0〜2ⁿ−1）</label>
-            <input id="valNum" type="number" min="0" max="15" value="0" />
-            <input id="val" type="range" min="0" max="15" value="0" />
-          </div>
-
-          <div class="control-row">
-            <button id="prev">◀︎ Prev</button>
-            <button id="next">Next ▶︎</button>
-            <label class="inline"><input id="auto" type="checkbox" /> 自動再生</label>
-            <label class="inline"><input id="wrap" type="checkbox" checked /> 循環</label>
-          </div>
-
-          <p class="muted s">※n変更で範囲が更新されます</p>
-        </div>
-
-        <div class="current-values">
-          <h3>バイナリコードとグレイコードの比較表</h3>
-          <div class="cards">
-            <div class="card">
-              <div class="k">Decimal</div>
-              <div class="v" id="decOut">0</div>
-            </div>
-            <div class="card">
-              <div class="k">Binary</div>
-              <code class="v" id="binOut">0000</code>
-            </div>
-            <div class="card">
-              <div class="k">Gray</div>
-              <code class="v" id="grayOut">0000</code>
-            </div>
-            <div class="card">
-              <div class="k">
-                隣接ハミング距離
-                <span class="tooltip-trigger">?
-                  <div class="tooltip">
-                    <strong>Gray</strong>: グレイコード同士の距離（常に1）<br>
-                    <strong>Bin</strong>: バイナリコード同士の距離（1〜数ビット）
-                  </div>
-                </span>
-              </div>
-              <div class="v" id="hdOut">Gray=1 / Bin=1</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="tableWrap">
+        <div class="tableWrap" id="tableWrap" tabindex="0" role="region" data-i18n-attr="aria-label:tbl.wrap">
           <table id="seqTbl" class="mono">
+            <caption class="sr-only" data-i18n="tbl.caption"></caption>
             <thead>
-              <tr><th>#</th><th>Binary</th><th>Gray</th><th>ΔHamming</th></tr>
+              <tr><th scope="col" data-i18n="th.dec"></th><th scope="col" data-i18n="th.bin"></th><th scope="col" data-i18n="th.gray"></th><th scope="col" data-i18n="th.dBin"></th><th scope="col" data-i18n="th.dGray"></th></tr>
             </thead>
             <tbody></tbody>
           </table>
         </div>
+        <p class="hint" data-i18n="tbl.hint"></p>
       </section>
     </div>
   </section>
 
-
-  <!-- Encoder Disc -->
-  <section id="panel-disc" class="panel" role="tabpanel">
+  <!-- ディスク -->
+  <section id="panel-disc" class="panel" role="tabpanel" aria-labelledby="tab-disc" hidden>
     <div class="panel-grid">
-      <aside class="controls">
-        <h2>エンコーダー・ディスク操作</h2>
-
-        <!-- 基本設定 -->
-        <div class="control-group">
-          <h3>基本設定</h3>
-          <div class="control-row">
-            <label>ビット数 n</label>
-            <input id="discBits" type="number" min="1" max="12" value="4" />
-          </div>
+      <aside class="box controls">
+        <h2 class="box-title" data-i18n="disc.title"></h2>
+        <div class="control-row">
+          <label for="discBits" data-i18n="disc.bits"></label>
+          <input id="discBits" type="number" min="1" max="12" value="4" inputmode="numeric">
         </div>
-
-        <!-- 自動回転 -->
-        <div class="control-group">
-          <h3>自動回転</h3>
-          <div class="control-row">
-            <button id="discRotateStart" class="spin-btn">▶ 再生</button>
-            <button id="discRotateStop" class="spin-btn" disabled>⏸ 停止</button>
-          </div>
-          <div class="control-row">
-            <label>回転速度</label>
-            <span id="discRotateSpeedValue">50</span>
-            <input id="discRotateSpeed" type="range" min="10" max="100" value="50" />
-          </div>
+        <div class="control-row">
+          <button id="spin" type="button" class="primary" aria-pressed="false"></button>
         </div>
-
-        <!-- 表示オプション -->
-        <div class="control-group">
-          <h3>表示オプション</h3>
-          <div class="control-row">
-            <label class="inline"><input id="showNumbers" type="checkbox" /> 数字01表示</label>
-            <label class="inline"><input id="highlightSector" type="checkbox" checked /> セクターハイライト</label>
-          </div>
+        <div class="control-row range-row">
+          <label for="spinSpeed" data-i18n="disc.speed"></label>
+          <output id="spinSpeedValue" for="spinSpeed"></output>
+          <input id="spinSpeed" type="range" min="5" max="180" step="5" value="30">
         </div>
-
-        <!-- 現在の状態 -->
-        <div class="control-group">
-          <h3>現在の状態</h3>
-          <div class="cards">
-            <div class="card">
-              <div class="k">セクター</div>
-              <div class="v"><span id="sectorOut">0</span> / <span id="sectorsTotal">16</span></div>
-            </div>
-            <div class="card">
-              <div class="k">パターン（Gray）</div>
-              <code class="v" id="discGray">0000</code>
-            </div>
-            <div class="card" id="binaryPatternCard" style="display:none;">
-              <div class="k">パターン（Binary）</div>
-              <code class="v" id="discBinaryPattern">0000</code>
-            </div>
-          </div>
+        <div class="control-row range-row">
+          <label for="angle" data-i18n="disc.angle"></label>
+          <output id="angleValue" for="angle"></output>
+          <input id="angle" type="range" min="0" max="359.9" step="0.1" value="0">
         </div>
-
-        <!-- セクター操作 -->
-        <div class="control-group">
-          <h3>セクター操作</h3>
-          <div class="row gap">
-            <button id="prevSector">◀︎ Prev</button>
-            <button id="nextSector">Next ▶︎</button>
-          </div>
-          <div class="control-row">
-            <button id="spinStart" class="spin-btn">▶ 回転</button>
-            <button id="spinStop" class="spin-btn" disabled>⏸ 停止</button>
-          </div>
-          <div class="control-row">
-            <label>回転速度</label>
-            <span id="spinSpeedValue">50</span>
-            <input id="spinSpeed" type="range" min="10" max="100" value="50" />
-          </div>
+        <div class="control-row">
+          <button id="prevSector" type="button" data-i18n="disc.prev"></button>
+          <button id="nextSector" type="button" data-i18n="disc.next"></button>
+        </div>
+        <fieldset class="options">
+          <legend data-i18n="disc.options"></legend>
+          <label class="check"><input id="showNumbers" type="checkbox"> <span data-i18n="disc.optNumbers"></span></label>
+          <label class="check"><input id="highlightSector" type="checkbox" checked> <span data-i18n="disc.optHighlight"></span></label>
+        </fieldset>
+        <h3 class="sub-title" data-i18n="disc.reading"></h3>
+        <div class="cards">
+          <div class="card"><div class="k" data-i18n="disc.sector"></div><div class="v mono" id="sectorOut"></div></div>
+          <div class="card"><div class="k" data-i18n="disc.grayRead"></div><div class="v mono" id="discGray"></div></div>
+          <div class="card"><div class="k" data-i18n="disc.binRead"></div><div class="v mono" id="discBinary"></div></div>
         </div>
       </aside>
 
-      <section class="viz">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:16px;">
-          <div>
-            <h3 style="margin:0 0 12px;font-size:16px;color:var(--accent);text-align:center;">グレイコードディスク</h3>
-            <canvas id="disc" width="400" height="400" aria-label="Gray code disc"></canvas>
-          </div>
-          <div>
-            <h3 style="margin:0 0 12px;font-size:16px;color:var(--accent);text-align:center;">バイナリディスク</h3>
-            <canvas id="discBinary" width="400" height="400" aria-label="Binary disc"></canvas>
-          </div>
+      <section class="box viz">
+        <div class="discs">
+          <figure class="disc-fig">
+            <figcaption data-i18n="disc.grayCaption"></figcaption>
+            <canvas id="discCanvasGray" role="img"></canvas>
+          </figure>
+          <figure class="disc-fig">
+            <figcaption data-i18n="disc.binCaption"></figcaption>
+            <canvas id="discCanvasBinary" role="img"></canvas>
+          </figure>
         </div>
-        <p class="muted s">リングは内側ほど下位ビット。白/黒＝0/1。手動回転で読み取りの安定性を体感。</p>
+        <p class="legend">
+          <span class="swatch swatch-0" aria-hidden="true"></span><span data-i18n="disc.legend0"></span>
+          <span class="swatch swatch-1" aria-hidden="true"></span><span data-i18n="disc.legend1"></span>
+          <span class="swatch swatch-read" aria-hidden="true"></span><span data-i18n="disc.legendText"></span>
+        </p>
+        <p class="hint" data-i18n="disc.hint"></p>
       </section>
     </div>
   </section>
 
-  <!-- Convert -->
-  <section id="panel-convert" class="panel" role="tabpanel">
+  <!-- 変換 -->
+  <section id="panel-convert" class="panel" role="tabpanel" aria-labelledby="tab-convert" hidden>
     <div class="twocol">
-      <div class="convBox">
-        <h2>Binary → Gray</h2>
-        <label>Binary 入力（0/1のみ）
-          <input id="binIn" type="text" value="1010" />
-        </label>
-        <button id="toGray">変換</button>
-        <div class="out"><code id="grayOut2">1111</code></div>
+      <section class="box convBox">
+        <h2 class="box-title" data-i18n="conv.b2g"></h2>
+        <label for="binIn" data-i18n="conv.binIn"></label>
+        <div class="input-row">
+          <input id="binIn" type="text" value="1010" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="binHint">
+          <button id="toGray" type="button" class="primary" data-i18n="conv.run"></button>
+        </div>
+        <p id="binHint" class="hint"></p>
+        <div class="out" aria-live="polite">
+          <code id="grayOut2" class="result"></code>
+          <p id="toGrayValue" class="value"></p>
+        </div>
         <div class="formula">
-          <span class="formula-label">変換式:</span>
+          <span class="formula-label" data-i18n="conv.formula"></span>
           <code class="formula-code">g = b ⊕ (b ≫ 1)</code>
-          <span class="tooltip-trigger">?
-            <div class="tooltip">
-              <strong>記号の意味</strong><br>
-              <strong>⊕</strong>: XOR（排他的論理和）<br>
-              <strong>≫</strong>: 右シフト演算<br>
-              <strong>g</strong>: グレイコードのビット<br>
-              <strong>b</strong>: バイナリコードのビット<br>
-              <strong>1</strong>: 1ビット分シフト
-            </div>
-          </span>
+          <button type="button" class="info" aria-expanded="false" aria-controls="tipB2G" data-i18n-attr="aria-label:ui.info">?</button>
         </div>
+        <p id="tipB2G" class="tip" hidden data-i18n="conv.b2gTip"></p>
+        <details class="acc process" open>
+          <summary><h3 data-i18n="conv.process"></h3></summary>
+          <div id="binaryToGraySteps" class="process-steps"></div>
+        </details>
+      </section>
 
-        <div class="calculation-process">
-          <div class="accordion-item">
-            <div class="accordion-header" data-target="binary-to-gray-process">
-              <span>計算過程を表示</span>
-              <span class="accordion-icon">▼</span>
-            </div>
-            <div class="accordion-content" id="binary-to-gray-process">
-              <div id="binaryToGraySteps" class="process-steps">
-                <!-- 計算過程がここに動的に生成される -->
-              </div>
-            </div>
-          </div>
+      <section class="box convBox">
+        <h2 class="box-title" data-i18n="conv.g2b"></h2>
+        <label for="grayIn" data-i18n="conv.grayIn"></label>
+        <div class="input-row">
+          <input id="grayIn" type="text" value="1111" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="grayHint">
+          <button id="toBin" type="button" class="primary" data-i18n="conv.run"></button>
         </div>
-      </div>
-
-      <div class="convBox">
-        <h2>Gray → Binary</h2>
-        <label>Gray 入力（0/1のみ）
-          <input id="grayIn" type="text" value="1111" />
-        </label>
-        <button id="toBin">変換</button>
-        <div class="out"><code id="binOut2">1010</code></div>
+        <p id="grayHint" class="hint"></p>
+        <div class="out" aria-live="polite">
+          <code id="binOut2" class="result"></code>
+          <p id="toBinValue" class="value"></p>
+        </div>
         <div class="formula">
-          <span class="formula-label">変換式:</span>
+          <span class="formula-label" data-i18n="conv.formula"></span>
           <code class="formula-code">bₙ₋₁ = gₙ₋₁, bᵢ = bᵢ₊₁ ⊕ gᵢ</code>
-          <span class="tooltip-trigger">?
-            <div class="tooltip">
-              <strong>記号の意味</strong><br>
-              <strong>⊕</strong>: XOR（排他的論理和）<br>
-              <strong>bₙ₋₁</strong>: バイナリの最上位ビット<br>
-              <strong>gₙ₋₁</strong>: グレイの最上位ビット<br>
-              <strong>bᵢ</strong>: バイナリのi番目のビット<br>
-              <strong>gᵢ</strong>: グレイのi番目のビット<br>
-              <strong>i</strong>: ビット位置（n-1から0まで）
-            </div>
-          </span>
+          <button type="button" class="info" aria-expanded="false" aria-controls="tipG2B" data-i18n-attr="aria-label:ui.info">?</button>
         </div>
-
-        <div class="calculation-process">
-          <div class="accordion-item">
-            <div class="accordion-header" data-target="gray-to-binary-process">
-              <span>計算過程を表示</span>
-              <span class="accordion-icon">▼</span>
-            </div>
-            <div class="accordion-content" id="gray-to-binary-process">
-              <div id="grayToBinarySteps" class="process-steps">
-                <!-- 計算過程がここに動的に生成される -->
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        <p id="tipG2B" class="tip" hidden data-i18n="conv.g2bTip"></p>
+        <details class="acc process" open>
+          <summary><h3 data-i18n="conv.process"></h3></summary>
+          <div id="grayToBinarySteps" class="process-steps"></div>
+        </details>
+      </section>
     </div>
   </section>
 
-
-
-  <!-- Use cases -->
-  <section id="panel-usecases" class="panel" role="tabpanel">
-    <h2>グレイコードの応用</h2>
-    <div class="cards usecases">
-      <div class="ucard">
-        <h3>絶対エンコーダー</h3>
-        <p><strong>1ビット変化特性を活用</strong><br>
-        セクター境界での読み取り誤差を防止。ロボット、工作機械、自動車のステアリング角度検出などに使用。</p>
-      </div>
-      <div class="ucard">
-        <h3>デジタル通信</h3>
-        <p><strong>エラー最小化を活用</strong><br>
-        QAM、PSK変調で隣接シンボル間のハミング距離を1に保ち、ノイズによる誤り時のビット誤り数を最小化。</p>
-      </div>
-      <div class="ucard">
-        <h3>論理回路設計</h3>
-        <p><strong>対称性を活用</strong><br>
-        カルノー図でのGray順配置により、隣接セルのグループ化が容易。状態遷移の最適化と回路簡略化を実現。</p>
-      </div>
-      <div class="ucard">
-        <h3>A/D・D/A変換器</h3>
-        <p><strong>単調性を活用</strong><br>
-        アナログ-デジタル変換時の量子化誤差を最小化。音響機器、計測器での高精度変換に使用。</p>
-      </div>
-      <div class="ucard">
-        <h3>メモリアドレッシング</h3>
-        <p><strong>順次アクセス効率を活用</strong><br>
-        フラッシュメモリやEEPROMでの書き込み/消去サイクル最適化。隣接アドレスでの電力消費削減。</p>
-      </div>
-      <div class="ucard">
-        <h3>組合せ最適化</h3>
-        <p><strong>探索効率を活用</strong><br>
-        遺伝的アルゴリズム、焼きなまし法での近傍探索。1ビット変化による局所探索の効率化。</p>
-      </div>
-      <div class="ucard">
-        <h3>暗号・セキュリティ</h3>
-        <p><strong>サイドチャネル攻撃対策を活用</strong><br>
-        スマートカードや暗号チップでの電力消費パターン隠蔽。ハミング重み変化の最小化により、電力解析攻撃への耐性を向上。</p>
-      </div>
-      <div class="ucard">
-        <h3>FPGA・VLSI設計</h3>
-        <p><strong>グリッチ最小化を活用</strong><br>
-        ステートマシンの状態遷移で中間状態でのグリッチを防止。クロック境界での信号安定性確保とタイミング違反回避。</p>
-      </div>
-      <div class="ucard">
-        <h3>光通信・レーダー</h3>
-        <p><strong>位相連続性を活用</strong><br>
-        FMCW（周波数変調連続波）レーダーや光ファイバー通信での位相変調。急激な位相変化を避けた信号品質向上とノイズ低減。</p>
-      </div>
+  <!-- 座学 -->
+  <section id="panel-learn" class="panel" role="tabpanel" aria-labelledby="tab-learn" hidden>
+    <div class="panel-single">
+      <h2 class="learn-title" data-i18n="learn.title"></h2>
+      <p data-i18n="learn.lead"></p>
+      <h3 class="section-title" data-i18n="learn.history"></h3>
+      <div class="ucards" id="learnHistory"></div>
+      <h3 class="section-title" data-i18n="learn.uses"></h3>
+      <div class="ucards" id="learnUses"></div>
+      <h3 class="section-title" data-i18n="learn.security"></h3>
+      <div class="ucards" id="learnSecurity"></div>
+      <h3 class="section-title" data-i18n="learn.myths"></h3>
+      <ul class="myths" id="learnMyths"></ul>
     </div>
   </section>
 </main>
 
-<footer>
-  <div class="footer">
-    🔗 GitHubリポジトリ（ <a href="https://github.com/ipusiron/GrayNinja" target="_blank">ipusiron/GrayNinja</a> ）
-  </div>
+<footer class="site-footer">
+  <a href="https://github.com/ipusiron/GrayNinja" target="_blank" rel="noopener noreferrer" data-i18n="ui.repo"></a>
 </footer>
 
 <script src="js/gray-core.js"></script>
-<script src="script.js"></script>
+<script src="js/messages.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
