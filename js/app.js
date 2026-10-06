@@ -12,7 +12,7 @@
   const sub = (n) => String(n).replace(/\d/g, (d) => SUB[d]);
 
   // ── タブ（WAI-ARIA の tabs パターン。矢印・Home・End で移動）──
-  const TABS = ['basics', 'disc', 'convert', 'learn'];
+  const TABS = ['basics', 'disc', 'convert', 'security', 'learn'];
   let activeTab = 'basics';
 
   function selectTab(name, focus) {
@@ -33,6 +33,7 @@
     } else {
       stopSpin();
     }
+    if (name === 'security') resizeLeakChart();
     try {
       history.replaceState(null, '', `#${name}`);
     } catch {
@@ -765,6 +766,194 @@
     runConvert(false);
   }
 
+  // ── セキュリティタブ ──
+  const leak = { n: 8, model: 'hd', data: null, chart: null };
+  const dip = { n: 4, order: 'binary', k: 0 };
+
+  const fmt2 = (x) => x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  function computeLeak() {
+    leak.data = { binary: G.counterLeak(leak.n, 'binary'), gray: G.counterLeak(leak.n, 'gray') };
+    leak.chart = null;
+  }
+
+  // 観測値を数にする（グラフの棒の高さ）。位置のモデルは反転したビットのうち最上位の位置＋1
+  const leakValue = (r) => (leak.model === 'hd' ? r.hd : leak.model === 'hw' ? r.hw : r.top);
+
+  function renderLeakTexts() {
+    if (!leak.data) return;
+    const total = 1 << leak.n;
+    $('leakModelHint').textContent = t(`leak.hint.${leak.model}`);
+    const frag = document.createDocumentFragment();
+    for (const [key, rows] of [['leak.kindBin', leak.data.binary], ['leak.kindGray', leak.data.gray]]) {
+      const sum = G.leakSummary(rows, leak.model);
+      const tr = document.createElement('tr');
+      const ex = sum.counts.slice(0, 4).map(([obs, c]) => `${leak.model === 'pos' ? `{${obs}}` : obs}→${c.toLocaleString('en-US')}`).join(', ');
+      const cells = [t(key), t('leak.distinct', { d: sum.distinct }), t('leak.candidates', { c: fmt2(sum.avgCandidates), total: total.toLocaleString('en-US') }), ex];
+      cells.forEach((v, i) => {
+        const cell = document.createElement(i ? 'td' : 'th');
+        if (!i) cell.scope = 'row';
+        cell.textContent = v;
+        tr.append(cell);
+      });
+      frag.append(tr);
+    }
+    $('leakTbl').querySelector('tbody').replaceChildren(frag);
+    $('leakFinding').textContent = t(`leak.found.${leak.model}`);
+    $('leakChart').setAttribute('aria-label', t('leak.chartAlt', { model: t(`leak.model.${leak.model}`), max: total - 1 }));
+  }
+
+  function resizeLeakChart() {
+    const cv = $('leakChart');
+    const css = Math.round(cv.getBoundingClientRect().width);
+    if (!css || !leak.data) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const W = Math.round(css * dpr);
+    const H = Math.round(220 * dpr);
+    if (cv.width !== W || cv.height !== H) {
+      cv.width = W;
+      cv.height = H;
+    }
+    drawLeakChart();
+  }
+
+  // 2段の棒グラフ（上＝2進、下＝グレイ）。横軸は i、棒の高さは観測値 ÷ n
+  function drawLeakChart() {
+    const cv = $('leakChart');
+    if (!cv.width || !leak.data) return;
+    const ctx = cv.getContext('2d');
+    const W = cv.width;
+    const H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    const size = 1 << leak.n;
+    const gap = Math.round(H * 0.08);
+    const stripH = (H - gap) / 2;
+    const bw = W / size;
+    const strips = [[leak.data.binary, 0, cssVar('--chart-bin')], [leak.data.gray, stripH + gap, cssVar('--chart-gray')]];
+    for (const [rows, top, color] of strips) {
+      ctx.fillStyle = color;
+      for (const r of rows) {
+        const h = (leakValue(r) / leak.n) * (stripH - 2);
+        ctx.fillRect(r.i * bw, top + stripH - h, Math.max(1, bw * 0.8), h);
+      }
+      ctx.strokeStyle = cssVar('--border');
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0.5, top + 0.5, W - 1, stripH - 1);
+    }
+  }
+
+  function setLeakBits(raw) {
+    const x = Math.trunc(Number(raw));
+    if (!Number.isFinite(x) || String(raw).trim() === '') {
+      $('leakBits').value = String(leak.n);
+      return;
+    }
+    leak.n = Math.max(2, Math.min(10, x));
+    $('leakBits').value = String(leak.n);
+    computeLeak();
+    renderLeakTexts();
+    resizeLeakChart();
+  }
+
+  // スイッチの並び。左から1番、2番…（1番が最上位ビット）。今回切り替えたスイッチに印を付ける
+  function renderDip() {
+    const n = dip.n;
+    const total = 2 ** n;
+    const enc = (k) => G.codeOf(k, dip.order);
+    const code = enc(dip.k);
+    const flips = dip.k > 0 ? new Set(G.diffBits(enc(dip.k - 1), code)) : new Set();
+    const frag = document.createDocumentFragment();
+    for (let idx = 0; idx < n; idx++) {
+      const bit = n - 1 - idx;
+      const sw = document.createElement('span');
+      sw.className = `dip${(code >>> bit) & 1 ? ' on' : ''}${flips.has(bit) ? ' flip' : ''}`;
+      const lab = document.createElement('span');
+      lab.className = 'dip-label';
+      lab.textContent = String(idx + 1);
+      sw.append(lab);
+      frag.append(sw);
+    }
+    $('dipRow').replaceChildren(frag);
+    const codeText = G.pad(code, n);
+    $('dipStatus').textContent = dip.k === 0
+      ? t('dip.statusStart', { total: total.toLocaleString('en-US'), code: codeText })
+      : t('dip.status', { k: (dip.k + 1).toLocaleString('en-US'), total: total.toLocaleString('en-US'), code: codeText, now: flips.size, sum: G.flipsUpTo(dip.k, dip.order).toLocaleString('en-US') });
+    $('dipPrev').disabled = dip.k === 0;
+    $('dipNext').disabled = dip.k === total - 1;
+    const tb = document.createDocumentFragment();
+    for (const [key, kind] of [['dip.kindBin', 'binary'], ['dip.kindGray', 'gray']]) {
+      const all = G.bruteFlips(n, kind);
+      const tr = document.createElement('tr');
+      const cells = [t(key), t('dip.times', { v: all.toLocaleString('en-US') }), t('dip.per', { v: fmt2(all / Math.max(1, total - 1)) })];
+      cells.forEach((v, i) => {
+        const cell = document.createElement(i ? 'td' : 'th');
+        if (!i) cell.scope = 'row';
+        cell.textContent = v;
+        tr.append(cell);
+      });
+      if (kind === dip.order) tr.classList.add('current');
+      tb.append(tr);
+    }
+    $('dipTbl').querySelector('tbody').replaceChildren(tb);
+    $('dbText').textContent = t('db.text', {
+      n,
+      naive: (n * total).toLocaleString('en-US'),
+      db: (total + n - 1).toLocaleString('en-US'),
+      total: total.toLocaleString('en-US')
+    });
+    if (n <= 6) {
+      const seq = G.deBruijn(n);
+      $('dbSeq').textContent = t('db.seq', { n, tail: n - 1, seq: seq + seq.slice(0, n - 1) });
+    } else {
+      $('dbSeq').textContent = t('db.seqLong', { n, len: total.toLocaleString('en-US') });
+    }
+  }
+
+  function setDipBits(raw) {
+    const x = Math.trunc(Number(raw));
+    if (!Number.isFinite(x) || String(raw).trim() === '') {
+      $('dipBits').value = String(dip.n);
+      return;
+    }
+    dip.n = Math.max(1, Math.min(16, x));
+    $('dipBits').value = String(dip.n);
+    dip.k = 0;
+    renderDip();
+  }
+
+  function initSecurity() {
+    $('leakBits').addEventListener('change', (e) => setLeakBits(e.target.value));
+    $('leakModel').addEventListener('change', (e) => {
+      leak.model = G.LEAK_MODELS.includes(e.target.value) ? e.target.value : 'hd';
+      renderLeakTexts();
+      drawLeakChart();
+    });
+    $('dipBits').addEventListener('change', (e) => setDipBits(e.target.value));
+    $('dipOrder').addEventListener('change', (e) => {
+      dip.order = e.target.value === 'gray' ? 'gray' : 'binary';
+      dip.k = 0;
+      renderDip();
+    });
+    $('dipPrev').addEventListener('click', () => {
+      if (dip.k > 0) dip.k--;
+      renderDip();
+    });
+    $('dipNext').addEventListener('click', () => {
+      if (dip.k < 2 ** dip.n - 1) dip.k++;
+      renderDip();
+    });
+    $('dipReset').addEventListener('click', () => {
+      dip.k = 0;
+      renderDip();
+    });
+    const onResize = () => activeTab === 'security' && resizeLeakChart();
+    if (window.ResizeObserver) new ResizeObserver(onResize).observe($('leakChart'));
+    else window.addEventListener('resize', onResize);
+    computeLeak();
+    renderLeakTexts();
+    renderDip();
+  }
+
   // ── 座学タブ（カードは辞書のキーから作る）──
   const LEARN = {
     learnHistory: ['h.gros', 'h.baudot', 'h.gray'],
@@ -812,6 +1001,8 @@
     renderOffsetControls();
     renderSweepTexts();
     renderConvertTexts();
+    renderLeakTexts();
+    renderDip();
     renderLearn();
   }
 
@@ -822,6 +1013,7 @@
     initBasics();
     initDisc();
     initConvert();
+    initSecurity();
     renderLearn();
     const theme = $('themeToggle');
     GrayTheme.refresh(theme);
@@ -832,6 +1024,7 @@
       disc.cache = {};
       disc.chart = null;
       if (activeTab === 'disc') drawDiscs();
+      if (activeTab === 'security') drawLeakChart();
     });
     I.onChange(renderDynamicTexts);
     const hash = location.hash.slice(1);
