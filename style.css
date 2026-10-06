@@ -29,6 +29,10 @@
   --disc-line:#64748b;
   --disc-read:#dc2626;
   --disc-highlight:#f59e0b;
+  /* 一周の読み取りのグラフ */
+  --chart-truth:#64748b;
+  --chart-gray:#1d4ed8;
+  --chart-bin:#c2410c;
 }
 
 /* ダーク（OS がダーク、かつ保存した選択がライトでないとき） */
@@ -52,6 +56,9 @@
     --mark-bg:#f59e0b;
     --mark-fg:#0b0f14;
     --shadow:0 4px 12px rgba(0,0,0,0.3);
+    --chart-truth:#8b9bb0;
+    --chart-gray:#58a6ff;
+    --chart-bin:#fb923c;
   }
 }
 
@@ -75,6 +82,9 @@
   --mark-bg:#f59e0b;
   --mark-fg:#0b0f14;
   --shadow:0 4px 12px rgba(0,0,0,0.3);
+  --chart-truth:#8b9bb0;
+  --chart-gray:#58a6ff;
+  --chart-bin:#fb923c;
 }
 
 /* ==========================================
@@ -260,6 +270,23 @@ input[type="number"]{
   width:6em;
 }
 
+select{
+  min-height:44px;
+  max-width:100%;
+  padding:8px 10px;
+  background:var(--chip);
+  border:1px solid var(--control-border);
+  border-radius:8px;
+  color:var(--fg);
+  font:inherit;
+  font-size:16px;
+}
+
+button:disabled,select:disabled,input:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
 input[type="range"]{
   flex:1 1 140px;
   min-width:0;
@@ -372,6 +399,7 @@ output{
 }
 
 fieldset.options{
+  min-inline-size:0;
   margin:12px 0;
   padding:8px 12px;
   border:1px solid var(--border);
@@ -386,6 +414,10 @@ fieldset.options legend{
 
 fieldset.options label.check{
   display:flex;
+}
+
+fieldset.options select{
+  width:100%;
 }
 
 /* ==========================================
@@ -624,6 +656,67 @@ mark.flip{
   margin-left:8px;
   background:var(--disc-read);
   border:0;
+}
+
+.status{
+  margin-top:4px;
+  font-size:13px;
+  font-weight:700;
+}
+
+.status.ok{
+  color:var(--ok);
+}
+
+.status.adj{
+  color:var(--muted);
+}
+
+.status.far{
+  color:var(--error);
+}
+
+.sweep{
+  margin-top:20px;
+  padding-top:4px;
+  border-top:1px solid var(--border);
+}
+
+.sweep-table{
+  max-height:none;
+}
+
+.sweep-table th,.sweep-table td{
+  white-space:normal;
+}
+
+.sweep-table th[scope="row"]{
+  font-family:ui-sans-serif,system-ui,sans-serif;
+}
+
+#sweepChart{
+  display:block;
+  width:100%;
+  height:200px;
+  margin-top:14px;
+}
+
+.swatch-line{
+  height:4px;
+  border:0;
+  border-radius:2px;
+}
+
+.swatch-truth{
+  background:repeating-linear-gradient(90deg,var(--chart-truth) 0 6px,transparent 6px 10px);
+}
+
+.swatch-gray{
+  background:var(--chart-gray);
+}
+
+.swatch-bin{
+  background:var(--chart-bin);
 }
 
 /* ==========================================

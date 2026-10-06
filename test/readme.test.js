@@ -186,3 +186,28 @@ test('リンクは https で、参考文献に特許の原本と Knuth がある
     assert.ok(refs.includes('https://www-cs-faculty.stanford.edu/~knuth/fasc2a.ps.gz'));
   }
 });
+
+test('README の「センサーがずれたとき」の表と数値が計算部の集計と一致する（日英）', () => {
+  const off = G.sensorOffsets(4, 'alternate', 0.1);
+  const p = (x, t) => `${(Math.round((10000 * x) / t) / 100).toFixed(2)}%`;
+  const want = ['gray', 'binary'].map((k) => {
+    const r = G.sweep(4, k, off);
+    return [p(r.exact, r.total), p(r.adjacent, r.total), p(r.far, r.total), r.far ? r.maxErr : 0];
+  });
+  assert.equal(G.sweep(4, 'gray', off).total, 4096);
+  assert.equal((off[0]).toFixed(1), '2.3');
+  for (const d of Object.values(DOCS)) {
+    const rows = [...d.text.matchAll(/^\| (?:グレイ|2進|Gray|Binary) \| ([\d.]+%) \| ([\d.]+%) \| ([\d.]+%) \| (なし|None|(\d+)(?:セクター| sectors)) \|$/gm)]
+      .map((m) => [m[1], m[2], m[3], m[5] ? Number(m[5]) : 0]);
+    assert.deepEqual(rows, want, d.file);
+    assert.ok(d.text.includes('4,096'));
+    assert.ok(d.text.includes('`1101`'));
+  }
+  const b = G.readAt(178, 4, 'binary', off);
+  assert.deepEqual([b.sector, b.code, b.value], [7, 0b1101, 13]);
+  const g = G.readAt(178, 4, 'gray', off);
+  assert.deepEqual([g.sector, g.value], [7, 8]);
+  const g60 = G.sweep(4, 'gray', G.sensorOffsets(4, 'alternate', 0.6));
+  assert.equal(p(g60.far, g60.total), '7.62%');
+  assert.equal(g60.maxErr, 2);
+});

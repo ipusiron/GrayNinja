@@ -199,3 +199,94 @@ test('センサーのずれ: グレイは半セクター未満のずれなら隣
   assert.ok(far > 0);
   assert.equal(maxErr, 8);
 });
+
+// ── 誤読シミュレーター（センサーのずれ・一周の集計）──
+// 参照実装: 計算部の readAt を使わず、セクターと符号を自前で計算して数える
+function refSweep(n, kind, off, sps) {
+  const S = 2 ** n;
+  const w = 360 / S;
+  const gray = (x) => x ^ (x >>> 1);
+  const ungray = (g) => {
+    let b = 0;
+    for (let x = g; x; x >>>= 1) b ^= x;
+    return b;
+  };
+  let far = 0;
+  let adjacent = 0;
+  let maxErr = 0;
+  for (let i = 0; i < S * sps; i++) {
+    const phi = (i + 0.5) * (w / sps);
+    const truth = Math.floor(phi / w) % S;
+    let code = 0;
+    for (let k = 0; k < n; k++) {
+      const a = (((phi + off[k]) % 360) + 360) % 360;
+      const sec = Math.floor(a / w) % S;
+      const c = kind === 'gray' ? gray(sec) : sec;
+      code |= ((c >> (n - 1 - k)) & 1) << (n - 1 - k);
+    }
+    const read = kind === 'gray' ? ungray(code) : code;
+    const d = Math.min((read - truth + S) % S, (truth - read + S) % S);
+    if (d === 1) adjacent++;
+    if (d > 1) {
+      far++;
+      maxErr = Math.max(maxErr, d);
+    }
+  }
+  return { far, adjacent, maxErr };
+}
+
+test('センサーのずれ: 3つのずらし方（交互・直線・種つきのランダム）', () => {
+  const w = G.sectorWidth(4);
+  assert.deepEqual(G.sensorOffsets(4, 'alternate', 0.1).map((x) => +(x / w).toFixed(6)), [0.1, -0.1, 0.1, -0.1]);
+  assert.deepEqual(G.sensorOffsets(4, 'linear', 0.3).map((x) => +(x / w).toFixed(6)), [0.3, 0.1, -0.1, -0.3]);
+  assert.deepEqual(G.sensorOffsets(1, 'linear', 0.3).map((x) => +(x / G.sectorWidth(1)).toFixed(6)), [0.3]);
+  const r1 = G.sensorOffsets(8, 'random', 0.4, 7);
+  assert.deepEqual(r1, G.sensorOffsets(8, 'random', 0.4, 7));
+  assert.notDeepEqual(r1, G.sensorOffsets(8, 'random', 0.4, 8));
+  for (const x of r1) assert.ok(Math.abs(x) <= 0.4 * G.sectorWidth(8));
+  assert.ok(G.sensorOffsets(4, 'alternate', 0).every((x) => x === 0));
+});
+
+test('一周の集計: ずれがなければ全部正しい。件数の合計は標本数と一致する', () => {
+  for (let n = 1; n <= 12; n++) {
+    for (const kind of ['gray', 'binary']) {
+      const r = G.sweep(n, kind, null);
+      assert.equal(r.exact, r.total);
+      assert.equal(r.total, r.points.length);
+      assert.ok(r.total >= 4096);
+    }
+  }
+  const r = G.sweep(4, 'binary', G.sensorOffsets(4, 'alternate', 0.1), 64);
+  assert.equal(r.exact + r.adjacent + r.far, r.total);
+  assert.equal(r.total, 16 * 64);
+});
+
+test('一周の集計が参照実装と一致する（隣の値・隣より遠い値の件数、最大のずれ）', () => {
+  const cases = [[4, 'alternate', 0.1], [4, 'alternate', 0.6], [4, 'linear', 0.9], [8, 'alternate', 0.1], [8, 'random', 0.45], [6, 'random', 1.2]];
+  for (const [n, pattern, amount] of cases) {
+    const off = G.sensorOffsets(n, pattern, amount, 3);
+    for (const kind of ['gray', 'binary']) {
+      const r = G.sweep(n, kind, off, 64);
+      const ref = refSweep(n, kind, off, 64);
+      assert.deepEqual([r.far, r.adjacent, r.maxErr], [ref.far, ref.adjacent, ref.maxErr], `${n} ${pattern} ${amount} ${kind}`);
+    }
+  }
+});
+
+test('グレイは半セクター未満のずれなら隣より遠い値を読まない。超えると読む。2進はわずかなずれでも遠い値を読む', () => {
+  for (const n of [2, 3, 4, 6, 8, 10]) {
+    for (const pattern of G.OFFSET_PATTERNS) {
+      for (const amount of [0.05, 0.25, 0.49]) {
+        assert.equal(G.sweep(n, 'gray', G.sensorOffsets(n, pattern, amount, 11)).far, 0, `${n} ${pattern} ${amount}`);
+      }
+    }
+  }
+  const g6 = G.sweep(4, 'gray', G.sensorOffsets(4, 'alternate', 0.6), 64);
+  assert.ok(g6.far > 0);
+  assert.equal(g6.maxErr, 2);
+  assert.equal(G.sweep(4, 'binary', G.sensorOffsets(4, 'alternate', 0.1), 64).maxErr, 6);
+  assert.equal(G.sweep(8, 'binary', G.sensorOffsets(8, 'alternate', 0.1), 64).maxErr, 86);
+  const worst = G.sweep(4, 'binary', G.sensorOffsets(4, 'alternate', 0.1), 64).worst;
+  assert.ok(worst.length > 0 && worst.length <= 5);
+  for (let i = 1; i < worst.length; i++) assert.ok(worst[i - 1].err >= worst[i].err);
+});
