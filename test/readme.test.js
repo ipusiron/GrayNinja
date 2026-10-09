@@ -223,3 +223,19 @@ test('README の「電力解析のモデルで比べたとき」の表が計算�
   assert.equal(12 * 2 ** 12, 49152);
   assert.equal(G.deBruijn(12).length + 12 - 1, 4107);
 });
+
+test('ユースケースの「このツールならではの使い方」の値は計算部と同じ（日英）', () => {
+  const [ja, en] = [DOCS.ja.text, DOCS.en.text];
+  const size = 1 << 4;
+  let allOne = true;
+  for (let i = 1; i < size; i++) if (G.hamming(G.toGray(i - 1), G.toGray(i)) !== 1) allOne = false;
+  assert.equal(allOne, true);
+  assert.deepEqual([G.toGray(7), G.toGray(8), G.hamming(7, 8)], [4, 12, 4]);
+  assert.ok(ja.includes('0111から1000へと4ビット') && en.includes('from 0111 to 1000'));
+  assert.deepEqual([G.bruteFlips(12, 'gray'), G.bruteFlips(12, 'binary')], [4095, 8178]);
+  assert.ok(ja.includes('4,095回') && ja.includes('8,178回'));
+  assert.ok(en.includes('4,095 changes') && en.includes('8,178'));
+  const ruler0 = G.rulerSeq(8).map((x) => x - 1).slice(0, 8);
+  assert.deepEqual(ruler0, [0, 1, 0, 2, 0, 1, 0, 3]);
+  for (const text of [ja, en]) assert.ok(text.includes('0, 1, 0, 2, 0, 1, 0, 3'));
+});

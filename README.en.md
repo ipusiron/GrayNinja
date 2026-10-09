@@ -189,6 +189,12 @@ Under the Hamming-distance model nothing can be narrowed down from the Gray coun
 
 ## 🎯 Use cases
 
+Ways of using this tool in particular
+
+- Confirming that adjacent codes always differ by exactly one bit (coding and encoder classes): in the 4-bit Gray code, all 16 adjacent codes have a Hamming distance of 1, while in ordinary binary the change from 7 to 8 flips 4 bits at once, from 0111 to 1000. You can confirm that a rotary encoder does not misread at a boundary because of the Gray code property that neighbors differ by one bit
+- Confirming that the number of switch changes in an exhaustive search is smallest in Gray order (measurement and power-analysis classes): trying all 4,096 combinations of 12 switches in Gray order changes only one switch per step, so there are 4,095 changes, while trying them in binary-number order takes 8,178. You can confirm by the counts why Gray order is chosen when you want the fewest changes (machine wear or a power-analysis model)
+- Confirming that the position of the bit that flips at each step is the ruler sequence (combinatorics and puzzle classes): following the Gray code in order, the position of the bit that changes at each step is a fixed run, 0, 1, 0, 2, 0, 1, 0, 3, ... (the ruler sequence). It is the same sequence as the discs moved in the Tower of Hanoi and the rings removed in the Chinese rings. You can confirm, by the position of the flip, that puzzles that look separate share the same structure
+
 - Explain the Gray code and Hamming distance in computer science or electronics classes and training, using the table and the moving discs.
 - Before using a rotary encoder in an electronics project, see how Gray and binary readings differ at a boundary.
 - Support learning about asynchronous FIFOs in FPGAs or the ordering of Karnaugh maps (00, 01, 11, 10).
