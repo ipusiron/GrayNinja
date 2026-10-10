@@ -114,6 +114,16 @@ test('読み込み: 初期化が終わるまで本文を描かず（2秒で必�
   assert.match(app, /if \(name === 'convert' && convDirty\) renderConvertTexts\(\);/);
 });
 
+test('回転の速さは5〜360°/秒（READMEの日英と一致）', () => {
+  const m = html.match(/<input id="spinSpeed" type="range" min="(\d+)" max="(\d+)" step="(\d+)" value="(\d+)">/);
+  assert.ok(m);
+  const [min, max, step, value] = m.slice(1).map(Number);
+  assert.deepEqual([min, max, step], [5, 360, 5]);
+  assert.ok(value >= min && value <= max && (value - min) % step === 0);
+  assert.ok(read('README.md').includes(`速さは${min}〜${max}°/秒`));
+  assert.ok(read('README.en.md').includes(`from ${min} to ${max}°/s`));
+});
+
 test('旧版の死にコード（exportData・自己参照の変数を使うクラス）が残っていない', () => {
   assert.ok(!fs.existsSync(new URL('../script.js', import.meta.url)));
   assert.ok(!app.includes('exportData'));

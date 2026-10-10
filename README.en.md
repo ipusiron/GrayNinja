@@ -79,7 +79,7 @@ Keyboard shortcuts work only while the Basics tab is shown and no button or inpu
 
 1. Move the "Disc position" slider slowly, or press "Next sector".
 2. Compare the code of the sector under the read line (the red line) and the value it represents, in Gray and in binary.
-3. Press "Rotate" to keep the discs turning at a constant speed.
+3. Press "Rotate" to keep the discs turning at a constant speed. The speed can be set from 5 to 360°/s (one turn per second at 360°/s). You can also see how the ring patterns look when the discs spin fast.
 4. Turn on "Offset the sensor for each ring" to read each ring at its red dot. Change the pattern (alternating, gradually from outside to inside, random) and the size (0 to 150% of a sector width), and compare the misreadings in the summary table and graph for one full turn.
 
 The outer ring is the most significant bit and the inner ring the least significant bit. On the discs, the light color is 0 and the dark color is 1 (the same in both themes).
