@@ -221,6 +221,7 @@ Ways of using this tool in particular
 - The discs have a single angle. The read line is fixed at the top and the disc rotates. The reading is the code of the sector under the read line.
 - Each disc is drawn once with runs of equal bits merged into single arcs, cached, and then rotated on every frame. Rotation advances by elapsed time multiplied by speed, so heavy drawing does not change the speed.
 - The comparison table is rebuilt only when the number of bits changes; changing the value just moves the marker on the selected row.
+- On opening, the page is not drawn until initialization (filling in the text) finishes. This avoids showing empty boxes first and filling in the text afterward; even if a script stops partway, the page is shown after 2 seconds. During initialization no element positions are read (no forced layout), and the results on the Convert tab are built when that tab is opened.
 - The misread simulator assumes that the sensor of ring k reads the sector at "disc position + offset k" and reads one full turn at 4,096 or more angles. Each reading is classified as correct, neighboring, or farther than a neighbor by its circular distance from the true sector.
 - The computational core (conversion, input normalization, steps, the table, and disc readings) lives in `js/gray-core.js` and is tested with `node --test`.
 

@@ -98,6 +98,22 @@ test('app.js は innerHTML・eval・document.write を使わない', () => {
   }
 });
 
+test('読み込み: 初期化が終わるまで本文を描かず（2秒で必ず出す）、初期化中にレイアウトを強制しない', () => {
+  // theme-init.js（head）が booting を付け、app.js の init の最後で外す
+  assert.match(read('js/theme-init.js'), /classList\.add\('booting'\)/);
+  const init = app.slice(app.indexOf('function init()'), app.lastIndexOf('init();'));
+  assert.match(init, /selectTab\(.*\);\n\s*booted = true;\n\s*document\.documentElement\.classList\.remove\('booting'\);\n\s*\}\s*$/);
+  // スクリプトが止まっても本文が見えるよう、CSS のアニメーションで2秒後に表示する
+  const css = read('style.css');
+  assert.match(css, /html\.booting body > \*\{\s*visibility:hidden;\s*animation:boot-show 0s linear 2s forwards;\s*\}/);
+  assert.match(css, /@keyframes boot-show\{\s*to\{visibility:visible;\}\s*\}/);
+  // 行の位置を読む revealRow は、初期化中と基本のタブが隠れているときは読まない
+  const reveal = app.slice(app.indexOf('function revealRow'), app.indexOf('function renderValue'));
+  assert.match(reveal, /^function revealRow\(tr\) \{\s*if \(!booted \|\| activeTab !== 'basics'\) return;/);
+  // 変換のタブは開いたときに作る
+  assert.match(app, /if \(name === 'convert' && convDirty\) renderConvertTexts\(\);/);
+});
+
 test('旧版の死にコード（exportData・自己参照の変数を使うクラス）が残っていない', () => {
   assert.ok(!fs.existsSync(new URL('../script.js', import.meta.url)));
   assert.ok(!app.includes('exportData'));

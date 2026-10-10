@@ -14,6 +14,7 @@
   // ── タブ（WAI-ARIA の tabs パターン。矢印・Home・End で移動）──
   const TABS = ['basics', 'how', 'disc', 'convert', 'security', 'learn'];
   let activeTab = 'basics';
+  let booted = false;
 
   function selectTab(name, focus) {
     if (!TABS.includes(name)) return;
@@ -34,6 +35,7 @@
       stopSpin();
     }
     if (name === 'security') resizeLeakChart();
+    if (name === 'convert' && convDirty) renderConvertTexts();
     try {
       history.replaceState(null, '', `#${name}`);
     } catch {
@@ -121,7 +123,9 @@
   }
 
   // 表の中だけをスクロールして、選んだ行を見える位置に置く（ページ全体は動かさない）
+  // 位置を読むとレイアウトが強制されるので、初期化中（値は0で先頭の行）と基本のタブが隠れているときは読まない
   function revealRow(tr) {
+    if (!booted || activeTab !== 'basics') return;
     const wrap = $('tableWrap');
     const head = wrap.querySelector('thead').offsetHeight;
     const top = tr.offsetTop;
@@ -760,7 +764,14 @@
     renderConvertTexts();
   }
 
+  // 変換のタブの文言と結果は、そのタブを開いているときだけ作る（開いたときに作り直す）
+  let convDirty = true;
   function renderConvertTexts() {
+    if (activeTab !== 'convert') {
+      convDirty = true;
+      return;
+    }
+    convDirty = false;
     for (const id of ['binHint', 'grayHint']) $(id).textContent = t('conv.hint', { max: G.MAX_BITS.toLocaleString('en-US') });
     runConvert(true);
     runConvert(false);
@@ -1196,6 +1207,8 @@
     I.onChange(renderDynamicTexts);
     const hash = location.hash.slice(1);
     selectTab(TABS.includes(hash) ? hash : 'basics', false);
+    booted = true;
+    document.documentElement.classList.remove('booting');
   }
 
   init();

@@ -109,6 +109,17 @@ body{
   line-height:1.7;
 }
 
+/* 初期化が終わるまで本文を描かない（文字の入っていない枠が先に出て、あとから文字が入るのを避ける）。
+   booting は js/theme-init.js が付け、js/app.js の init の最後で外す。スクリプトが途中で止まっても2秒後には表示する */
+html.booting body > *{
+  visibility:hidden;
+  animation:boot-show 0s linear 2s forwards;
+}
+
+@keyframes boot-show{
+  to{visibility:visible;}
+}
+
 .mono,code{
   font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace;
 }
