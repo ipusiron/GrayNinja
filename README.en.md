@@ -42,7 +42,7 @@ Try it directly in your browser.
 >*Comparing what leaks from binary and Gray counters under power-analysis models*
 
 >![Learn tab](assets/en/screenshot-learn.png)
->*The Learn tab: history and real uses, each with a source*
+>*The Learn tab: history and real uses, each with a source. The second card covers contact bounce in mechanical encoders*
 
 ---
 
@@ -167,6 +167,15 @@ On a 4-bit disc, with the sensors offset alternately by 10% of a sector width (Â
 
 Just before the 7/8 boundary the binary disc reads 13 (`1101`). The Gray disc only reads the neighboring value slightly early near a boundary. The Gray code stays within a neighboring value only while every sensor is offset by less than half a sector; with a 60% offset even the Gray disc reads values two sectors away at 7.62% of the angles.
 
+### When a contact bounces (chattering)
+
+A mechanical encoder reads its position through contacts, so a contact bounces as it switches, turning on and off for a few milliseconds (contact bounce, or chattering). The Gray code does not prevent the bounce itself. What it limits is how far off the reading can be while a contact bounces.
+
+- Absolute encoders: only one bit changes at each boundary, so while a contact bounces the reading only alternates between the two values on either side of the boundary. In binary, four bits bounce together at the boundary between 7 and 8, so any of the 16 values from 0000 to 1111 can be read.
+- Incremental encoders: the A and B phases form a 2-bit Gray code that changes as 00, 01, 11, 10 (the same order as the comparison table with n=2 on the Basics tab), and the two phases never change at the same time. A counter that counts the edges of both phases counts +1 and âˆ’1 alternately while one phase bounces and, as long as it misses no edge, returns to the correct count when the bounce ends.
+
+In both cases, how to treat the value while it flickers is decided separately by debouncing, such as waiting for a set time or requiring several matching reads. The causes of chattering and ways to prevent it with circuits, software, part choice, and repair are covered in the related article "[Sorting out chattering countermeasures](https://akademeia.info/?p=53421)" (in Japanese).
+
 ### Comparing under power-analysis models
 
 For an 8-bit counter stepped once, the average number of candidates for i that remain after one observation (i uniform over 0 to 255) is as follows under three leakage models.
@@ -184,6 +193,7 @@ Under the Hamming-distance model nothing can be narrowed down from the Gray coun
 - It cannot detect or correct errors. All 2^n patterns of n bits are used, so flipping one bit yields another valid codeword.
 - "A single-bit error only gives a neighboring value" does not hold. The true property is that misreading as a neighboring value costs only one bit; flipping the top bit of `0000` gives `1000`, which represents 15.
 - It is not a side-channel countermeasure. See "Power analysis and Hamming distance" and "Common misconceptions" in the Learn tab.
+- It does not prevent chattering (contact bounce). It only keeps a misreading during the bounce within the values on either side of the boundary.
 
 ---
 
@@ -254,6 +264,8 @@ The same tests run on GitHub Actions (`.github/workflows/test.yml`).
 - C. E. Cummings, [Simulation and Synthesis Techniques for Asynchronous FIFO Design](https://web.archive.org/web/2020/http://www.sunburst-design.com/papers/CummingsSNUG2002SJ_FIFO1.pdf), SNUG 2002
 - Analog Devices, [MT-020 ADC Architectures I: The Flash Converter](https://www.analog.com/media/en/training-seminars/tutorials/MT-020.pdf)
 - E. Brier, C. Clavier, F. Olivier, [Correlation Power Analysis with a Leakage Model](https://www.iacr.org/archive/ches2004/31560016/31560016.pdf), CHES 2004
+- STMicroelectronics, [RM0008 Reference manual](https://www.st.com/resource/en/reference_manual/rm0008-stm32f101xx-stm32f102xx-stm32f103xx-stm32f105xx-and-stm32f107xx-advanced-armbased-32bit-mcus-stmicroelectronics.pdf) (15.3.12 Encoder interface mode: counting that cancels out bounce on one input)
+- Alps Alpine, [EC11E15244G1](https://tech.alpsalpine.com/e/products/detail/EC11E15244G1/) (chattering specification of a mechanical encoder)
 - Other sources are linked from each card in the Learn tab.
 
 ---

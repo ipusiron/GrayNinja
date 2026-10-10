@@ -1121,10 +1121,10 @@
   // ── 座学タブ（カードは辞書のキーから作る）──
   const LEARN = {
     learnHistory: ['h.gros', 'h.baudot', 'h.gray'],
-    learnUses: ['u.encoder', 'u.qam', 'u.karnaugh', 'u.fifo', 'u.adc', 'u.eeprom', 'u.nand', 'u.ga', 'u.light', 'u.puzzle'],
+    learnUses: ['u.encoder', 'u.bounce', 'u.qam', 'u.karnaugh', 'u.fifo', 'u.adc', 'u.eeprom', 'u.nand', 'u.ga', 'u.light', 'u.puzzle'],
     learnSecurity: ['s.dip', 's.puf', 's.power']
   };
-  const MYTHS = ['m.sca', 'm.fault', 'm.ecc', 'm.neighbor', 'm.adc'];
+  const MYTHS = ['m.sca', 'm.fault', 'm.ecc', 'm.neighbor', 'm.adc', 'm.bounce'];
 
   function renderLearn() {
     for (const [id, keys] of Object.entries(LEARN)) {

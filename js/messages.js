@@ -251,6 +251,9 @@
     'u.encoder.t': 'ロータリーエンコーダー（絶対型）',
     'u.encoder.p': '回転角を複数のリングで符号化した円板を、リングごとのセンサーで読みます。境目で1ビットしか変わらないので、読み取りのタイミングがずれても隣の値にしかなりません。2進の円板では、7 → 8の境目のように4ビットが同時に変わる場所で、まったく違う値を読むおそれがあります。',
     'u.encoder.s': '出典: [オムロンFAQ00941](https://www.ia.omron.com/support/faq/answer/34/faq00941/index.html)',
+    'u.bounce.t': '機械式エンコーダーのチャタリング',
+    'u.bounce.p': '機械式のエンコーダーは、接点が切り替わるときに跳ねて、オンとオフを数ミリ秒くり返します（チャタリング。アルプスアルパインのEC11E15244G1の仕様は3ms以下）。グレイコードは跳ねそのものは防ぎません。境目で変わるのが1ビットなので、跳ねている間の読み値が境目の両側の2つの値を行き来するだけで済みます（2進の7と8の境目では、0〜15のどの値も読むおそれがあります）。インクリメンタル型のA相・B相も2ビットのグレイコードで、両方の相の切り替わりで数えるカウンターは、片方の相の跳ねを+1と−1の交互で打ち消します（切り替わりを読み落とさない場合）。',
+    'u.bounce.s': '出典: [STMicroelectronics RM0008 15.3.12（Encoder interface mode）](https://www.st.com/resource/en/reference_manual/rm0008-stm32f101xx-stm32f102xx-stm32f103xx-stm32f105xx-and-stm32f107xx-advanced-armbased-32bit-mcus-stmicroelectronics.pdf)、[アルプスアルパインEC11E15244G1](https://tech.alpsalpine.com/j/products/detail/EC11E15244G1/)',
     'u.qam.t': 'デジタル変調（QAM・PSK）',
     'u.qam.p': '隣り合う信号点に1ビット違いのビット列を割り当てる（グレイ配置）と、雑音で隣の点に誤ったときのビット誤りが1ビットで済み、ビット誤り率が下がります。無線LANの規格や、コヒーレント光通信（OIF 400ZRのDP-16QAM）でも使われます。',
     'u.qam.s': '出典: [Agrellほか（2004）](https://doi.org/10.1109/TIT.2004.838367)、[OIF 400ZR](https://www.oiforum.com/wp-content/uploads/OIF-400ZR-01.0_reduced2.pdf)',
@@ -293,7 +296,8 @@
     'm.fault': '**「故障注入（フォールト攻撃）に強い」** → 逆です。故障注入の対策では、状態どうしのハミング距離を大きく取ります。隣の状態が1ビット違いの割り当ては、1ビットの反転で別の正しい状態へ移れてしまいます（[Jayasenaほか（ICCD 2022）](https://www.cise.ufl.edu/research/cad/Publications/iccd22lfi.pdf)）。',
     'm.ecc': '**「誤りを検出・訂正できる」** → できません。2ⁿ通りをすべて使うので、1ビットの誤りは別の正しい符号語になります。',
     'm.neighbor': '**「1ビットの誤りなら隣の値にしかならない」** → 向きが逆です。正しい性質は「隣の値への読み違いが1ビットで済む」で、0000の最上位ビットが反転した1000は値15を表します。',
-    'm.adc': '**「A/D変換器の量子化誤差を減らす」** → 減らしません。減るのは、比較器の誤りによる大きな読み違いです。'
+    'm.adc': '**「A/D変換器の量子化誤差を減らす」** → 減らしません。減るのは、比較器の誤りによる大きな読み違いです。',
+    'm.bounce': '**「チャタリング（接点の跳ね）を防ぐ」** → 跳ねそのものは防ぎません。防げるのは跳ねている間に遠い値を読むことで、読み値は境目の両側の2つの値を行き来します。値が落ち着くまでの扱いには、デバウンスが別に必要です。'
   };
 
   const en = {
@@ -544,6 +548,9 @@
     'u.encoder.t': 'Absolute rotary encoders',
     'u.encoder.p': 'A disc that encodes the angle on several rings is read by one sensor per ring. Because only one bit changes at each boundary, a timing mismatch between sensors can only give the neighboring value. On a binary disc, places where four bits change at once, such as the 7 → 8 boundary, can produce a completely different value.',
     'u.encoder.s': 'Source: [OMRON FAQ00941](https://www.ia.omron.com/support/faq/answer/34/faq00941/index.html)',
+    'u.bounce.t': 'Contact bounce in mechanical encoders',
+    'u.bounce.p': 'The contacts of a mechanical encoder bounce as they switch, turning on and off for a few milliseconds (chattering; the Alps Alpine EC11E15244G1 specifies 3 ms max.). The Gray code does not prevent the bounce itself. Because only one bit changes at each boundary, the reading during the bounce only alternates between the two values on either side of it (at the binary boundary between 7 and 8, any value from 0 to 15 can be read). The A and B phases of an incremental encoder also form a 2-bit Gray code, and a counter that counts the edges of both phases counts up and down alternately while one phase bounces, so the bounce cancels out (as long as it misses no edge).',
+    'u.bounce.s': 'Sources: [STMicroelectronics RM0008, 15.3.12 Encoder interface mode](https://www.st.com/resource/en/reference_manual/rm0008-stm32f101xx-stm32f102xx-stm32f103xx-stm32f105xx-and-stm32f107xx-advanced-armbased-32bit-mcus-stmicroelectronics.pdf), [Alps Alpine EC11E15244G1](https://tech.alpsalpine.com/e/products/detail/EC11E15244G1/)',
     'u.qam.t': 'Digital modulation (QAM, PSK)',
     'u.qam.p': 'Assigning bit patterns that differ in one bit to neighboring constellation points (Gray mapping) means that when noise moves a symbol to a neighboring point, only one bit is wrong, which lowers the bit error rate. It is used in wireless LAN standards and in coherent optical links (DP-16QAM in OIF 400ZR).',
     'u.qam.s': 'Sources: [Agrell et al. 2004](https://doi.org/10.1109/TIT.2004.838367), [OIF 400ZR](https://www.oiforum.com/wp-content/uploads/OIF-400ZR-01.0_reduced2.pdf)',
@@ -586,7 +593,8 @@
     'm.fault': '**"It is robust against fault injection"** → The opposite. Fault-injection countermeasures keep a large Hamming distance between states. An assignment where neighboring states differ by one bit lets a single bit flip move to another valid state ([Jayasena et al., ICCD 2022](https://www.cise.ufl.edu/research/cad/Publications/iccd22lfi.pdf)).',
     'm.ecc': '**"It can detect or correct errors"** → It cannot. All 2ⁿ patterns are used, so a single-bit error yields another valid codeword.',
     'm.neighbor': '**"A single-bit error only gives a neighboring value"** → The direction is reversed. The true property is that "misreading as a neighboring value costs only one bit"; flipping the top bit of 0000 gives 1000, which represents 15.',
-    'm.adc': '**"It reduces the quantization error of A/D converters"** → It does not. What it reduces is large misreadings caused by comparator errors.'
+    'm.adc': '**"It reduces the quantization error of A/D converters"** → It does not. What it reduces is large misreadings caused by comparator errors.',
+    'm.bounce': '**"It prevents contact bounce (chattering)"** → It does not prevent the bounce itself. What it prevents is reading a distant value while a contact bounces: the reading only alternates between the two values on either side of the boundary. A separate debounce step is still needed until the value settles.'
   };
 
   const DICTS = { ja, en };
