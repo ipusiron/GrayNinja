@@ -206,7 +206,7 @@ Ways of using this tool in particular
 - Confirming that the position of the bit that flips at each step is the ruler sequence (combinatorics and puzzle classes): following the Gray code in order, the position of the bit that changes at each step is a fixed run, 0, 1, 0, 2, 0, 1, 0, 3, ... (the ruler sequence). It is the same sequence as the discs moved in the Tower of Hanoi and the rings removed in the Chinese rings. You can confirm, by the position of the flip, that puzzles that look separate share the same structure
 
 - Explain the Gray code and Hamming distance in computer science or electronics classes and training, using the table and the moving discs.
-- Before using a rotary encoder in an electronics project, see how Gray and binary readings differ at a boundary.
+- Before using a rotary encoder in an electronics project, see how Gray and binary readings differ at a boundary. The number of values that can be read while a contact bounces (2 to the power of d when d bits change) can also be estimated from the Hamming distance on the Basics tab.
 - Support learning about asynchronous FIFOs in FPGAs or the ordering of Karnaugh maps (00, 01, 11, 10).
 - Before studying Gray mapping in digital modulation (QAM, PSK), check by hand that neighbors differ in one bit.
 - Follow the positions of flipped bits (0, 1, 0, 2, 0, 1, 0, 3, …) in the table and relate them to puzzles such as the Chinese rings and the Tower of Hanoi.

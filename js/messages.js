@@ -54,7 +54,7 @@
     'card.gray': 'グレイ',
     'card.next': '次の値までのハミング距離',
     'card.nextValue': 'グレイは{g}、2進は{b}',
-    'card.nextTip': 'いまの値iと次の値i+1（最後の値の次は0）の間で変わるビットの数です。グレイは常に1、2進は1〜nです。',
+    'card.nextTip': 'いまの値iと次の値i+1（最後の値の次は0）の間で変わるビットの数です。グレイは常に1、2進は1〜nです。接点で読むエンコーダーでは、変わるビットの数がdのとき、境目で接点が跳ねている間（チャタリング）に読みうる値は2のd乗通りです。グレイは常に2通りで、4ビットの2進の7 → 8では16通りです。',
 
     'tbl.caption': '2進とグレイコードの比較表',
     'tbl.wrap': 'スクロールできる比較表',
@@ -351,7 +351,7 @@
     'card.gray': 'Gray',
     'card.next': 'Hamming distance to the next value',
     'card.nextValue': 'Gray {g} / Binary {b}',
-    'card.nextTip': 'The number of bits that change between the current value i and the next value i+1 (0 after the last value). It is always 1 for Gray and 1 to n for binary.',
+    'card.nextTip': 'The number of bits that change between the current value i and the next value i+1 (0 after the last value). It is always 1 for Gray and 1 to n for binary. On an encoder read through contacts, when d bits change, 2 to the power of d values can be read while the contacts bounce at the boundary (chattering). That is always 2 for Gray, and 16 for 7 → 8 in 4-bit binary.',
 
     'tbl.caption': 'Binary and Gray code comparison table',
     'tbl.wrap': 'Scrollable comparison table',

@@ -1,7 +1,7 @@
 // 辞書（js/messages.js）の検査。言語間のキーと置き場所、リンク、app.js が使うキー
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { read, load } from './load.js';
+import { read, load, core } from './load.js';
 
 const M = load('js/messages.js').GrayMessages;
 const app = read('js/app.js');
@@ -43,6 +43,15 @@ test('app.js が使うキーがすべて辞書にある', () => {
   for (const m of learn.matchAll(/'(m\.\w+)'/g)) keys.add(m[1]);
   for (const k of keys) assert.ok(k in ja, k);
   assert.ok(keys.size > 50);
+});
+
+test('基本の説明（チャタリング）の数値が計算部と一致する（日英）', () => {
+  const G = core();
+  assert.equal(2 ** G.hamming(G.toGray(7), G.toGray(8)), 2);
+  assert.equal(2 ** G.hamming(7, 8), 16);
+  for (let i = 0; i < 4096; i++) assert.equal(G.hamming(G.toGray(i), G.toGray((i + 1) % 4096)), 1, i);
+  assert.ok(ja['card.nextTip'].includes('グレイは常に2通りで、4ビットの2進の7 → 8では16通り'));
+  assert.ok(M.DICTS.en['card.nextTip'].includes('always 2 for Gray, and 16 for 7 → 8 in 4-bit binary'));
 });
 
 test('座学の各カードに出典のリンクがある', () => {
