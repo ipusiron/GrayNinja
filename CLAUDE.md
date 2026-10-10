@@ -26,6 +26,10 @@ Scripts are classic scripts (not modules) loaded in this order; each puts one ob
 5. `js/theme.js` → `GrayTheme`: light/dark toggle
 6. `js/app.js`: the screen (tabs, comparison table, discs, conversion, Learn cards). All text comes from `messages.js`
 
+### Startup
+
+`theme-init.js` adds the `booting` class to `<html>`, and `style.css` keeps `body > *` invisible while it is set (a CSS animation shows the page after 2 s even if a script fails). `init()` in `app.js` removes the class at its very end, so the first visible paint already has all the text. Do not read layout (`offsetTop`, `clientWidth`, …) during `init()`: `revealRow` returns early until `booted` is true and while the Basics tab is hidden, and the Convert tab is rendered lazily the first time it is opened (`convDirty`). Checked by `test/html.test.js`.
+
 ### Disc model
 
 There is a single angle `disc.phi`. The read line is fixed at the top and the disc rotates by `−phi`, so the sector under the read line is `GrayCore.sectorAt(phi, n)`. Each disc is drawn once into an offscreen canvas (cached per size, bit count, options and theme) and rotated on every frame. Rotation is time-based (`requestAnimationFrame`, degrees per second).
