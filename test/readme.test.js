@@ -212,6 +212,37 @@ test('README の「センサーがずれたとき」の表と数値が計算部�
   assert.equal(g60.maxErr, 2);
 });
 
+test('README の「接点が跳ねたとき」の値が計算部と一致し、関連記事へリンクする（日英）', () => {
+  // 境目 i → i+1 で変わるビットが跳ねている間に読みうる値（変わるビットの0/1のすべての組み合わせ）
+  const readings = (i, kind) => {
+    const enc = kind === 'gray' ? G.toGray : (x) => x;
+    const dec = kind === 'gray' ? G.fromGray : (x) => x;
+    const a = enc(i);
+    const mask = a ^ enc((i + 1) % 16);
+    const out = new Set();
+    for (let s = mask; ; s = (s - 1) & mask) {
+      out.add(dec(a ^ s));
+      if (s === 0) break;
+    }
+    return [...out].sort((x, y) => x - y);
+  };
+  for (let i = 0; i < 16; i++) assert.deepEqual(readings(i, 'gray'), [i, (i + 1) % 16].sort((x, y) => x - y), `gray ${i}`);
+  assert.equal(readings(7, 'binary').length, 16);
+  // A相・B相は2ビットのグレイコード。片方の相だけが跳ねると +1 と −1 を交互に数え、収まれば +1
+  assert.deepEqual(G.sequence(2).map((r) => r.gray), ['00', '01', '11', '10']);
+  const idx = { '00': 0, '01': 1, '11': 2, '10': 3 };
+  const bounce = ['00', '01', '00', '01', '00', '01'];
+  const steps = bounce.slice(1).map((s, k) => ((idx[s] - idx[bounce[k]] + 4) % 4 === 1 ? 1 : -1));
+  assert.deepEqual(steps, [1, -1, 1, -1, 1]);
+  assert.equal(steps.reduce((a, b) => a + b, 0), 1);
+  const ARTICLE = 'https://akademeia.info/?p=53421';
+  const [ja, en] = [DOCS.ja.text, DOCS.en.text];
+  assert.ok(ja.includes('\n### 接点が跳ねたとき（チャタリング）\n') && en.includes('\n### When a contact bounces (chattering)\n'));
+  assert.ok(ja.includes('0000〜1111の16通り') && en.includes('any of the 16 values from 0000 to 1111'));
+  assert.ok(ja.includes('00, 01, 11, 10と変わる2ビットのグレイコード') && en.includes('2-bit Gray code that changes as 00, 01, 11, 10'));
+  assert.ok(ja.includes(`「[チャタリング対策を整理する](${ARTICLE})」`) && en.includes(`(${ARTICLE})`));
+});
+
 test('README の「電力解析のモデルで比べたとき」の表が計算部の集計と一致する（日英）', () => {
   const f = (x) => x.toFixed(2);
   const want = ['hd', 'hw', 'pos'].map((m) => ['binary', 'gray'].map((k) => f(G.leakSummary(G.counterLeak(8, k), m).avgCandidates)));
